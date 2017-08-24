@@ -8,8 +8,7 @@
 #                                    /_/           drxspace@gmail.com
 #
 #set -e
-#
-set -x
+#set -x
 
 fkey=$(($RANDOM * $$))
 
@@ -19,7 +18,8 @@ mkfifo "${fpipepkgssys}" "${fpipepkgslcl}"
 export frealtemp=$(mktemp -u --tmpdir realtemp.XXXXXXXX)
 
 export V=true			# V for verbose
-export -a processIDs=()
+declare -a runningProcessIDs=()
+export runningProcessIDs
 
 # ---[ Functions ]-------------------------------------------------------------|
 
@@ -52,31 +52,59 @@ function domanpage
 
 function doexecpkg
 {
-#	${V} && { echo "$1 $2 $3 $4" 1>&2; }
+	${V} && { echo "Executing $1" 1>&2; }
 
 #	exec "$(which $1)"
 
 	return
 }
 
+export execpkg_cmd='bash -c "doexecpkg $3"'
+
 function dopopup
 {
-#	${V} && { echo "$1 $2 $3 $4" 1>&2; }
+	${V} && { echo "$1 $2 $3 $4" 1>&2; }
 
-	local frmpopup=$(yad --form --width=320 --borders=9 --center \
+	local frmpopup=$(yad --form --width=400 --borders=9 --center --fixed \
 		--skip-taskbar --no-buttons --title="Choose action:" \
 		--image="dialog-information" --image-on-top \
 		--text="Please, choose your desired action from the list below by clicking on its elements" \
 		--field="<span color='#006699'>Reinstall selected package</span>!gtk-refresh":fbtn "${doreinstpkg} $1 $3" \
 		--field="<span color='#006699'>Uninstall/Remove selected package</span>!gtk-delete":fbtn "${doremovepkg} $1 $3" \
-		--field="<span color='#006699'>Try to run selected package</span>!gtk-execute":fbtn "${doexecpkg} $3" \
+		--field="<span color='#006699'>Try to run selected package</span>!gtk-execute":fbtn "$execpkg_cmd" \
 		--field="<span color='#006699'>Try to view the man page of the selected package</span>!gtk-help":fbtn "${domanpage} $3") &
-	processIDs+=($!)
+	runningProcessIDs+=($!)
+	${V} && { echo "${runningProcessIDs[@]}" 1>&2; }
 
 	return
 }
 
 # -----------------------------------------------------------------------------|
+
+export -f doexecpkg
+export -f domanpage
+export -f dopopup
+export -f doreinstpkg
+export -f doremovepkg
+
+# -----------------------------------------------------------------------------|
+
+function doabout
+{
+	local frmabout=$(yad --form --width=400 --borders=9 --center --fixed \
+		--skip-taskbar --title="About Yet another Arch Linux PAckage Manager" \
+		--image="system-software-install" --image-on-top \
+		--text="<span font_size='medium' font_weight='bold'>Yet another Arch Linux PAckage Manager</span>\nby John A Ginis (a.k.a. <a href='https://github.com/drxspace'>drxspace</a>)\n<span font_size='small'>build on Summer of 2017</span>" \
+		--field="":lbl \
+		--field="These are packages from all enabled repositories except for base and base-devel ones. Also, you\'ll find packages that are locally installed such as AUR packages.":lbl \
+		--field="":lbl \
+		--buttons-layout="center" \
+		--button=$"Κλείσιμο!window-close!Κλείνει το παράθυρο":0) &
+	runningProcessIDs+=($!)
+	${V} && { echo "${runningProcessIDs[@]}" 1>&2; }
+
+	return
+}
 
 function dosavepkglists
 {
@@ -92,26 +120,6 @@ function dosavepkglists
 
 	return
 }
-
-function doabout
-{
-#	${V} && { echo "$1 $2 $3 $4" 1>&2; }
-
-	local frmabout=$(yad --form --width=400 --borders=9 --center \
-		--skip-taskbar --title="About Yet another Arch Linux PAckage Manager" \
-		--image="system-software-install" --image-on-top \
-		--text="<span font_size='medium' font_weight='bold'>Yet another Arch Linux PAckage Manager</span>\nby John A Ginis (a.k.a. <a href='https://github.com/drxspace'>drxspace</a>)\n<span font_size='small'>build on Summer of 2017</span>" \
-		--field="":lbl \
-		--field="These are packages from all enabled repositories except for base and base-devel ones. Also, you\'ll find packages that are locally installed such as AUR packages.":lbl \
-		--field="":lbl \
-		--buttons-layout="center" \
-		--button=$"Κλείσιμο!window-close!Κλείνει το παράθυρο":0) &
-	local pid=$!; processIDs+=($pid)
-
-	return
-}
-
-# -----------------------------------------------------------------------------|
 
 function doscan4pkgs
 {
@@ -130,11 +138,6 @@ function doscan4pkgs
 # -----------------------------------------------------------------------------|
 
 export -f doabout
-export -f doexecpkg
-export -f domanpage
-export -f dopopup
-export -f doreinstpkg
-export -f doremovepkg
 export -f dosavepkglists
 export -f doscan4pkgs
 
@@ -142,7 +145,7 @@ export -f doscan4pkgs
 
 trap "	rm -f ${fpipepkgssys} ${fpipepkgslcl} ${frealtemp};
 	unset fpipepkgssys fpipepkgslcl frealtemp;
-	unset V doabout doexecpkg domanpage doreinstpkg doremovepkg dopopup dosavepkglists doscan4pkgs processIDs;" EXIT
+	unset V doabout doexecpkg domanpage doreinstpkg doremovepkg dopopup dosavepkglists doscan4pkgs runningProcessIDs;" EXIT
 
 # -----------------------------------------------------------------------------|
 
@@ -176,6 +179,6 @@ These are packages from all enabled repositories except for base and base-devel 
 exec 3>&-
 exec 4>&-
 
-[[ ${#processIDs[@]} -gt 0 ]] && eval "kill -15 ${processIDs[@]}"
+[[ ${#runningProcessIDs[@]} -gt 0 ]] && eval "kill -15 ${runningProcessIDs[@]}"
 
 exit $?
