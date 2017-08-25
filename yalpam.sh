@@ -8,7 +8,8 @@
 #                                    /_/           drxspace@gmail.com
 #
 #set -e
-#set -x
+#
+set -x
 
 fkey=$(($RANDOM * $$))
 
@@ -23,49 +24,48 @@ export runningProcessIDs
 
 # ---[ Functions ]-------------------------------------------------------------|
 
-function doreinstpkg
-{
+doreinstpkg() {
 #	${V} && { echo "$1 $2 $3 $4" 1>&2; }
 
 #	exec xterm
 
 	return
 }
+export -f doreinstpkg
 
-function doremovepkg
-{
+doremovepkg() {
 #	${V} && { echo "$1 $2 $3 $4" 1>&2; }
 
 #	exec xterm -geometry=94x24+0+0 -e "man $1"
 
 	return
 }
+export -f doremovepkg
 
-function domanpage
-{
+domanpage() {
 #	${V} && { echo "$1 $2 $3 $4" 1>&2; }
 
 #	exec xterm -geometry=94x24+0+0 -e "man $1"
 
 	return
 }
+export -f domanpage
 
-function doexecpkg
-{
+doexecpkg() {
 	${V} && { echo "Executing $1" 1>&2; }
 
 #	exec "$(which $1)"
 
 	return
 }
+export -f doexecpkg
 
 export execpkg_cmd='bash -c "doexecpkg $3"'
 
-function dopopup
-{
+dopopup() {
 	${V} && { echo "$1 $2 $3 $4" 1>&2; }
 
-	local frmpopup=$(yad --form --width=400 --borders=9 --center --fixed \
+	local frmpopup=$(yad --form --width=400 --borders=9 --center --align=center --fixed \
 		--skip-taskbar --no-buttons --title="Choose action:" \
 		--image="dialog-information" --image-on-top \
 		--text="Please, choose your desired action from the list below by clicking on its elements" \
@@ -78,20 +78,12 @@ function dopopup
 
 	return
 }
-
-# -----------------------------------------------------------------------------|
-
-export -f doexecpkg
-export -f domanpage
 export -f dopopup
-export -f doreinstpkg
-export -f doremovepkg
 
 # -----------------------------------------------------------------------------|
 
-function doabout
-{
-	local frmabout=$(yad --form --width=400 --borders=9 --center --fixed \
+doabout() {
+	local frmabout=$(yad --form --width=400 --borders=9 --center --align=center --fixed \
 		--skip-taskbar --title="About Yet another Arch Linux PAckage Manager" \
 		--image="system-software-install" --image-on-top \
 		--text="<span font_size='medium' font_weight='bold'>Yet another Arch Linux PAckage Manager</span>\nby John A Ginis (a.k.a. <a href='https://github.com/drxspace'>drxspace</a>)\n<span font_size='small'>build on Summer of 2017</span>" \
@@ -105,9 +97,9 @@ function doabout
 
 	return
 }
+export -f doabout
 
-function dosavepkglists
-{
+dosavepkglists() {
 	local dirname=$(yad --file --directory --filename="${XDG_DOWNLOAD_DIR:-$HOME/Downloads}/" \
 			    --width=640 --height=480 --skip-taskbar \
 			    --title="Choose a directory to save the files...")
@@ -120,9 +112,9 @@ function dosavepkglists
 
 	return
 }
+export -f dosavepkglists
 
-function doscan4pkgs
-{
+doscan4pkgs() {
 	echo -e '\f' >> "${fpipepkgssys}"
 	pacman -Qe |\
 		grep -vx "$(pacman -Qg base)" |\
@@ -134,18 +126,15 @@ function doscan4pkgs
 
 	return
 }
-
-# -----------------------------------------------------------------------------|
-
-export -f doabout
-export -f dosavepkglists
 export -f doscan4pkgs
 
 # -----------------------------------------------------------------------------|
 
 trap "	rm -f ${fpipepkgssys} ${fpipepkgslcl} ${frealtemp};
 	unset fpipepkgssys fpipepkgslcl frealtemp;
-	unset V doabout doexecpkg domanpage doreinstpkg doremovepkg dopopup dosavepkglists doscan4pkgs runningProcessIDs;" EXIT
+	unset V runningProcessIDs;
+	unset doabout doexecpkg domanpage doreinstpkg doremovepkg dopopup dosavepkglists doscan4pkgs;
+	unset execpkg_cmd;" EXIT
 
 # -----------------------------------------------------------------------------|
 
@@ -169,7 +158,7 @@ yad --key="${fkey}" --notebook --width=520 --height=640 \
     --window-icon="system-software-install" --title="Yet another Arch Linux PAckage Manager" \
     --image="system-software-install" --image-on-top \
     --text="<span font_size='medium' font_weight='bold'>View Lists of Installed Packages</span>\n\
-These are packages from all enabled repositories except for base and base-devel ones. Also, you\'ll find packages that are locally installed such as AUR packages." \
+These are packages from all enabled repositories except for <i>base</i> repository. Also, you\'ll find packages that are locally installed such as <i>AUR</i> packages." \
     --tab=" System" --tab=" Local/AUR" \
     --button="<span color='#0066ff'>List packages</span>!system-search!Scans databases for installed packages:bash -c 'doscan4pkgs'" \
     --button="Save packages!document-save!Saves packages lists to disk:bash -c 'dosavepkglists'" \
