@@ -50,8 +50,8 @@ doexecpkg() {
 export -f doexecpkg
 
 domanpage() {
-	exec xterm -geometry=94x24+0+0 -e "man $1"
-
+	${V} && { echo "$1" 1>&2; }
+	xterm -e "man $1"
 	return
 }
 export -f domanpage
@@ -60,7 +60,7 @@ export execpkg_cmd='bash -c "doexecpkg $3"'
 
 dopopup() {
 	${V} && { echo "$1 $2 $3 $4" 1>&2; }
-
+	export manager=$1
 	yad	--form --width=400 --borders=9 --center --align=center --fixed \
 		--skip-taskbar --title="Choose action:" \
 		--image="dialog-information" --image-on-top \
@@ -68,7 +68,7 @@ dopopup() {
 		--field="<span color='#006699'>Reinstall selected package</span>!gtk-refresh":btn "${doreinstpkg} $1 $3" \
 		--field="<span color='#006699'>Uninstall/Remove selected package</span>!gtk-delete":btn "${doremovepkg} $1 $3" \
 		--field="<span color='#006699'>Try to run selected package</span>!gtk-execute":btn "$execpkg_cmd" \
-		--field="<span color='#006699'>Try to view the man page of the selected package</span>!gtk-help":btn "${domanpage} $3" \
+		--field="<span color='#006699'>Try to view the man page of the selected package</span>!gtk-help":btn "domanpage $manager" \
 		--field="":lbl \
 		--buttons-layout="center" \
 		--button=$"Close!window-close!Closes the current dialog":0 &>/dev/null &
@@ -136,6 +136,8 @@ doscan4pkgs() {
 		grep -vx --line-buffered "$(pacman -Qm)" |\
 		awk '{printf "%d\n%s\n%s\n", ++i, $1, $2}' >> "${fpipepkgssys}"
 
+# | yad --progress --pulsate --auto-close --no-buttons --width=200 --borders=9 --center --align=center --skip-taskbar --title="One moment..." --text-align="center" --text="Querying packages..." 
+
 	echo -e '\f' >> "${fpipepkgslcl}"
 	pacman -Qm | awk '{printf "%d\n%s\n%s\n", ++i, $1, $2}' >> "${fpipepkgslcl}"
 
@@ -145,11 +147,7 @@ export -f doscan4pkgs
 
 # -----------------------------------------------------------------------------|
 
-trap "	rm -f ${fpipepkgssys} ${fpipepkgslcl} ${frunningPIDs};
-	unset fpipepkgssys fpipepkgslcl frealtemp;
-	unset V;
-	unset doabout doexecpkg domanpage doreinstpkg doremovepkg dopopup dosavepkglists doscan4pkgs;
-	unset execpkg_cmd;" EXIT
+trap "rm -f ${fpipepkgssys} ${fpipepkgslcl} ${frunningPIDs};" EXIT
 
 # -----------------------------------------------------------------------------|
 
@@ -159,17 +157,17 @@ exec 4<> ${fpipepkgslcl}
 echo 'frmAboutPIDs=()
 frmPopupPIDs=()' > ${frunningPIDs}
 
-yad --plug="${fkey}" --tabnum=1 --list --no-markup --grid-lines="hor" \
+yad --plug="${fkey}" --tabnum=1 --list --grid-lines="hor" \
     --dclick-action='bash -c "dopopup pacman %s %s %s"' \
-    --text "List of system packages:" \
+    --text "List of <i>system</i> packages:" \
     --search-column=2 --expand-column=2 --focus-field=1 \
-    --column='No:':NUM --column='Package Name' --column='Package Version' <&3 &
+    --column='No:':num --column='Package Name' --column='Package Version' <&3 &
 
-yad --plug="${fkey}" --tabnum=2 --list --no-markup --grid-lines="hor" \
+yad --plug="${fkey}" --tabnum=2 --list --grid-lines="hor" \
     --dclick-action='bash -c "dopopup yaourt %s %s %s"' \
-    --text "List of local (includes AUR) packages:" \
+    --text "List of <i>local (includes AUR)</i> packages:" \
     --search-column=2 --expand-column=2 --focus-field=1 \
-    --column='No:':NUM --column='Package Name' --column='Package Version' <&4 &
+    --column='No:':num --column='Package Name' --column='Package Version' <&4 &
 
 yad --key="${fkey}" --notebook --width=520 --height=640 \
     --borders=9 --tab-borders=3 --active-tab=1 --focus-field=1 \
@@ -189,8 +187,9 @@ exec 4>&-
 # -----------------------------------------------------------------------------|
 
 source ${frunningPIDs}
-runningPIDs+=$(sed 's/^[[:blank:]]*//' <<<${frmAboutPIDs[@]})
-runningPIDs+=$(sed 's/^[[:blank:]]*//' <<<${frmPopupPIDs[@]})
+runningPIDs+=${frmAboutPIDs[@]}
+[[ "${runningPIDs}" ]] && runningPIDs+=' '
+runningPIDs+=${frmPopupPIDs[@]}
 
 [[ "${runningPIDs}" ]] && {
 	eval "kill -15 ${runningPIDs[@]}" &>/dev/null
