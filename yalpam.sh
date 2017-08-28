@@ -18,60 +18,61 @@ export fpipepkgslcl=$(mktemp -u --tmpdir pkgslcl.XXXXXXXX)
 mkfifo "${fpipepkgssys}" "${fpipepkgslcl}"
 export frunningPIDs=$(mktemp -u --tmpdir runningPIDs.XXXXXXXX)
 
-export V=true			# V for verbose
+#export V=true			# V for verbose
+#	${V} && { echo "$1 $2 $3 $4" 1>&2; }
 
 declare -a runningPIDs=()
 
 # ---[ Functions ]-------------------------------------------------------------|
 
+doinstpkg() {
+	exec xterm -e "[[ \"$1\" == \"pacman\" ]] && { sudo $1 -Sy --force --noconfirm $2; } || { $1 -Sya --force --noconfirm $2; }"
+	return
+}
+export -f doinstpkg
+
 doreinstpkg() {
-#	${V} && { echo "$1 $2 $3 $4" 1>&2; }
-
-#	exec xterm
-
+	exec xterm -e "[[ \"$1\" == \"pacman\" ]] && { sudo $1 -Sy --force --noconfirm $2; } || { $1 -Sya --force --noconfirm $2; }"
 	return
 }
 export -f doreinstpkg
 
 doremovepkg() {
-#	${V} && { echo "$1 $2 $3 $4" 1>&2; }
-
-#	exec xterm -geometry=94x24+0+0
-
+	exec xterm -e "sudo $1 -Rsun $2"
+	export -f doscan4pkgs
+	doscan4pkgs
 	return
 }
 export -f doremovepkg
 
 doexecpkg() {
 	exec "$(which $1)" &>/dev/null
-
 	return
 }
 export -f doexecpkg
 
 domanpage() {
-	${V} && { echo "$1" 1>&2; }
 	xterm -e "man $1"
 	return
 }
 export -f domanpage
 
-export execpkg_cmd='bash -c "doexecpkg $3"'
-
 dopopup() {
-	${V} && { echo "$1 $2 $3 $4" 1>&2; }
 	export manager=$1
+	export package=$3
 	yad	--form --width=400 --borders=9 --center --align=center --fixed \
 		--skip-taskbar --title="Choose action:" \
 		--image="dialog-information" --image-on-top \
 		--text="Please, choose your desired action from the list below by clicking on its elements" \
-		--field="<span color='#006699'>Reinstall selected package</span>!gtk-refresh":btn "${doreinstpkg} $1 $3" \
-		--field="<span color='#006699'>Uninstall/Remove selected package</span>!gtk-delete":btn "${doremovepkg} $1 $3" \
-		--field="<span color='#006699'>Try to run selected package</span>!gtk-execute":btn "$execpkg_cmd" \
-		--field="<span color='#006699'>Try to view the man page of the selected package</span>!gtk-help":btn "domanpage $manager" \
+		--field="<span color='#006699'>Reinstall selected package</span>!gtk-refresh":btn 'sh -c "doreinstpkg $manager $package"' \
+		--field="<span color='#006699'>Uninstall/Remove selected package</span>!gtk-delete":btn 'sh -c "doremovepkg $manager $package"' \
+		--field="<span color='#006699'>Install a package of the selected category</span>!gtk-refresh":btn 'sh -c "doreinstpkg $manager $package"' \
+		--field="":lbl \
+		--field="<span color='#006699'>Try to run selected package</span>!gtk-execute":btn 'sh -c "doexecpkg $package"' \
+		--field="<span color='#006699'>Try to view the man page of the selected package</span>!gtk-help":btn 'sh -c "domanpage $package"' \
 		--field="":lbl \
 		--buttons-layout="center" \
-		--button=$"Close!window-close!Closes the current dialog":0 &>/dev/null &
+		--button=$"Close!gtk-close!Closes the current dialog":0 &>/dev/null &
 
 	local pid=$!
 	sed -i "s/frmPopupPIDs=(\(.*\))/frmPopupPIDs=(\1 $(echo ${pid}))/" ${frunningPIDs}
@@ -82,7 +83,6 @@ dopopup() {
 			sed -i "s/ $(echo ${pid})//" ${frunningPIDs}
 		fi
 	fi
-
 	return
 }
 export -f dopopup
@@ -98,7 +98,7 @@ doabout() {
 		--field="These are packages from all enabled repositories except for base and base-devel ones. Also, you\'ll find packages that are locally installed such as AUR packages.":lbl \
 		--field="":lbl \
 		--buttons-layout="center" \
-		--button=$"Close!window-close!Closes the current dialog":0 &>/dev/null &
+		--button=$"Close!gtk-close!Closes the current dialog":0 &>/dev/null &
 
 	local pid=$!
 	sed -i "s/frmAboutPIDs=(\(.*\))/frmAboutPIDs=(\1 $(echo ${pid}))/" ${frunningPIDs}
@@ -109,7 +109,6 @@ doabout() {
 			sed -i "s/ $(echo ${pid})//" ${frunningPIDs}
 		fi
 	fi
-
 	return
 }
 export -f doabout
@@ -124,7 +123,6 @@ dosavepkglists() {
 			grep -vx "$(pacman -Qqm)" > "${dirname}"/pkgsSYSTEM.txt
 		pacman -Qqm > "${dirname}"/pkgsLOCAL.txt
 	fi
-
 	return
 }
 export -f dosavepkglists
@@ -140,7 +138,6 @@ doscan4pkgs() {
 
 	echo -e '\f' >> "${fpipepkgslcl}"
 	pacman -Qm | awk '{printf "%d\n%s\n%s\n", ++i, $1, $2}' >> "${fpipepkgslcl}"
-
 	return
 }
 export -f doscan4pkgs
@@ -158,13 +155,13 @@ echo 'frmAboutPIDs=()
 frmPopupPIDs=()' > ${frunningPIDs}
 
 yad --plug="${fkey}" --tabnum=1 --list --grid-lines="hor" \
-    --dclick-action='bash -c "dopopup pacman %s %s %s"' \
+    --dclick-action='sh -c "dopopup pacman %s %s %s"' \
     --text "List of <i>system</i> packages:" \
     --search-column=2 --expand-column=2 --focus-field=1 \
     --column='No:':num --column='Package Name' --column='Package Version' <&3 &
 
 yad --plug="${fkey}" --tabnum=2 --list --grid-lines="hor" \
-    --dclick-action='bash -c "dopopup yaourt %s %s %s"' \
+    --dclick-action='sh -c "dopopup yaourt %s %s %s"' \
     --text "List of <i>local (includes AUR)</i> packages:" \
     --search-column=2 --expand-column=2 --focus-field=1 \
     --column='No:':num --column='Package Name' --column='Package Version' <&4 &
@@ -175,10 +172,10 @@ yad --key="${fkey}" --notebook --width=520 --height=640 \
     --image="system-software-install" --image-on-top \
     --text="<span font_size='medium' font_weight='bold'>View Lists of Installed Packages</span>\n\
 These are packages from all enabled repositories except for <i>base</i> repository. Also, you\'ll find packages that are locally installed such as <i>AUR</i> packages." \
-    --tab=" System" --tab=" Local/AUR" \
-    --button="<span color='#0066ff'>List packages</span>!system-search!Scans databases for installed packages:bash -c 'doscan4pkgs'" \
-    --button="Save packages!document-save!Saves packages lists to disk:bash -c 'dosavepkglists'" \
-    --button="gtk-about:bash -c 'doabout'" \
+    --tab=" <i>System</i> category" --tab=" <i>Local/AUR</i> category" \
+    --button="<span color='#0066ff'>List packages</span>!system-search!Scans databases for installed packages:sh -c 'doscan4pkgs'" \
+    --button="Save packages!gtk-save!Saves packages lists to disk:sh -c 'dosavepkglists'" \
+    --button="gtk-about:sh -c 'doabout'" \
     --button="gtk-close":0
 
 exec 3>&-
@@ -188,7 +185,7 @@ exec 4>&-
 
 source ${frunningPIDs}
 runningPIDs+=${frmAboutPIDs[@]}
-[[ "${runningPIDs}" ]] && runningPIDs+=' '
+[[ "${frmAboutPIDs}" ]] && [[ "${frmPopupPIDs}" ]] && runningPIDs+=' '
 runningPIDs+=${frmPopupPIDs[@]}
 
 [[ "${runningPIDs}" ]] && {
