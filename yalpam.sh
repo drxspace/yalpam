@@ -11,6 +11,17 @@
 #
 set -x
 
+# Check to see if all needed tools are present
+# Prerequisites
+if ! hash notify-send &>/dev/null; then
+	echo -e ":: \e[1mnotify-send\e[0m: command not found!" 1>&2;
+	exit 10;
+fi
+if ! hash yad &>/dev/null; then
+	echo -e ":: \e[1myad\e[0m: command not found!" 1>&2;
+	exit 20;
+fi
+
 fkey=$(($RANDOM * $$))
 
 export fpipepkgssys=$(mktemp -u --tmpdir pkgssys.XXXXXXXX)
@@ -18,28 +29,13 @@ export fpipepkgslcl=$(mktemp -u --tmpdir pkgslcl.XXXXXXXX)
 mkfifo "${fpipepkgssys}" "${fpipepkgslcl}"
 export frunningPIDs=$(mktemp -u --tmpdir runningPIDs.XXXXXXXX)
 
-#export V=true			# V for verbose
+#export V=true				# V for verbose
 #	${V} && { echo "$1 $2 $3 $4" 1>&2; }
 # --close-on-unfocus
- 
+
 declare -a runningPIDs=()
 
 # ---[ Functions ]-------------------------------------------------------------|
-
-doscan4pkgs() {
-	echo -e '\f' >> "${fpipepkgssys}"
-	pacman -Qe |\
-		grep -vx "$(pacman -Qg base)" |\
-		grep -vx --line-buffered "$(pacman -Qm)" |\
-		awk '{printf "%d\n%s\n%s\n", ++i, $1, $2}' >> "${fpipepkgssys}"
-
-# | yad --progress --pulsate --auto-close --no-buttons --width=200 --borders=9 --center --align=center --skip-taskbar --title="One moment..." --text-align="center" --text="Querying packages..." 
-
-	echo -e '\f' >> "${fpipepkgslcl}"
-	pacman -Qm | awk '{printf "%d\n%s\n%s\n", ++i, $1, $2}' >> "${fpipepkgslcl}"
-	return
-}
-export -f doscan4pkgs
 
 doreinstpkg() {
 	xterm -e "[[ \"$1\" == \"pacman\" ]] && { sudo $1 -Sy --force --noconfirm $2; } || { $1 -Sya --force --noconfirm $2; }"
@@ -77,7 +73,7 @@ dopopup() {
 	export manager=$1
 	export package=$3
 	export -f doscan4pkgs
-	yad	--form --width=400 --borders=9 --align=center --fixed \
+	yad	--form --width=400 --borders=9 --align=center --center --fixed \
 		--skip-taskbar --title="Choose action:" \
 		--image="dialog-information" --image-on-top \
 		--text="Please, choose your desired action from the list below by clicking on its elements." \
@@ -103,10 +99,10 @@ dopopup() {
 }
 export -f dopopup
 
-# -----------------------------------------------------------------------------|
+# ---[ Buttons Functionality ]-------------------------------------------------|
 
 doabout() {
-	yad	--form --width=400 --borders=9 --align=center --fixed \
+	yad	--form --width=400 --borders=9 --align=center --center --fixed \
 		--skip-taskbar --title="About Yet another Arch Linux PAckage Manager" \
 		--image="system-software-install" --image-on-top \
 		--text="<span font_size='medium' font_weight='bold'>Yet another Arch Linux PAckage Manager</span>\nby John A Ginis (a.k.a. <a href='https://github.com/drxspace'>drxspace</a>)\n<span font_size='small'>build on Summer of 2017</span>" \
@@ -143,6 +139,23 @@ dosavepkglists() {
 }
 export -f dosavepkglists
 
+doscan4pkgs() {
+	echo -e '\f' >> "${fpipepkgssys}"
+	pacman -Qe |\
+		grep -vx "$(pacman -Qg base)" |\
+		grep -vx --line-buffered "$(pacman -Qm)" |\
+		awk '{printf "%d\n%s\n%s\n", ++i, $1, $2}' |\
+		tee -a "${fpipepkgssys}" |\
+		yad --progress --pulsate --auto-close --no-buttons --width=300 --align=center --center --fixed --borders=9 --skip-taskbar --title="Querying packages" --text-align="center" --text="One moment please. Querying <i>System</i> packages..."
+
+	echo -e '\f' >> "${fpipepkgslcl}"
+	pacman -Qm | awk '{printf "%d\n%s\n%s\n", ++i, $1, $2}' |\
+		tee -a "${fpipepkgslcl}" |\
+		yad --progress --pulsate --auto-close --no-buttons --width=300 --align=center --center --fixed --borders=9 --skip-taskbar --title="Querying packages" --text-align="center" --text="One moment please. Querying <i>Local/AUR</i> packages..."
+	return
+}
+export -f doscan4pkgs
+
 # -----------------------------------------------------------------------------|
 
 trap "rm -f ${fpipepkgssys} ${fpipepkgslcl} ${frunningPIDs};" EXIT
@@ -157,13 +170,13 @@ frmPopupPIDs=()' > ${frunningPIDs}
 
 yad --plug="${fkey}" --tabnum=1 --list --grid-lines="hor" \
     --dclick-action='bash -c "dopopup pacman %s %s %s"' \
-    --text "List of <i>system</i> packages:" \
+    --text "List of <i>System</i> packages:" \
     --search-column=2 --expand-column=2 --focus-field=1 \
     --column='No:':num --column='Package Name' --column='Package Version' <&3 &
 
 yad --plug="${fkey}" --tabnum=2 --list --grid-lines="hor" \
     --dclick-action='bash -c "dopopup yaourt %s %s %s"' \
-    --text "List of <i>local (includes AUR)</i> packages:" \
+    --text "List of <i>Local/AUR</i> packages:" \
     --search-column=2 --expand-column=2 --focus-field=1 \
     --column='No:':num --column='Package Name' --column='Package Version' <&4 &
 
@@ -173,7 +186,7 @@ yad --key="${fkey}" --notebook --width=520 --height=640 \
     --image="system-software-install" --image-on-top \
     --text="<span font_size='medium' font_weight='bold'>View Lists of Installed Packages</span>\n\
 These are packages from all enabled repositories except for <i>base</i> repository. Also, you\'ll find packages that are locally installed such as <i>AUR</i> packages." \
-    --tab=" <i>System</i> category" --tab=" <i>Local/AUR</i> category" \
+    --tab=" <i>System</i> packages category" --tab=" <i>Local/AUR</i> packages category" \
     --button="<span color='#0066ff'>List packages</span>!system-search!Scans databases for installed packages:bash -c 'doscan4pkgs'" \
     --button="Save packages!gtk-save!Saves packages lists to disk:bash -c 'dosavepkglists'" \
     --button="gtk-about:bash -c 'doabout'" \
