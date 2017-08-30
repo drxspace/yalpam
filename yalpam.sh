@@ -11,15 +11,25 @@
 #
 set -x
 
+[[ -x "$(which paplay)" ]] && [[ -d /usr/share/sounds/freedesktop/stereo/ ]] && {
+	export ErrorSnd="$(which paplay) /usr/share/sounds/freedesktop/stereo/dialog-error.oga"
+	export InfoSnd="$(which paplay) /usr/share/sounds/freedesktop/stereo/dialog-information.oga"
+}
+
 # Check to see if all needed tools are present
 # Prerequisites
-if ! hash notify-send &>/dev/null; then
-	echo -e ":: \e[1mnotify-send\e[0m: command not found!" 1>&2;
-	exit 10;
-fi
 if ! hash yad &>/dev/null; then
-	echo -e ":: \e[1myad\e[0m: command not found!" 1>&2;
-	exit 20;
+	$(${ErrorSnd});
+	if ! hash notify-send &>/dev/null; then
+		echo -e ":: \e[1myad\e[0m command not found." 1>&2;
+		exit 10;
+	else
+		notify-send "Yet another Arch Linux PAckage Manager" "<b>yad</b> command not found." -i face-worried;
+		exit 20;
+	fi
+elif [ -n $(yad --version | grep "GTK+ 2") ]; then
+	notify-send "Yet another Arch Linux PAckage Manager" "<b>yad</b> command uses an unsupported <i>GTK+ platform</i> version." -i face-worried
+	$(${InfoSnd}); exit 30;
 fi
 
 fkey=$(($RANDOM * $$))
@@ -32,10 +42,11 @@ export frunningPIDs=$(mktemp -u --tmpdir runningPIDs.XXXXXXXX)
 #export V=true				# V for verbose
 #	${V} && { echo "$1 $2 $3 $4" 1>&2; }
 # --close-on-unfocus
+# declare/local -x
 
 declare -a runningPIDs=()
 
-# ---[ Functions ]-------------------------------------------------------------|
+# ---[ Action functions ]------------------------------------------------------|
 
 doreinstpkg() {
 	xterm -e "[[ \"$1\" == \"pacman\" ]] && { sudo $1 -Sy --force --noconfirm $2; } || { $1 -Sya --force --noconfirm $2; }"
@@ -58,31 +69,32 @@ doinstpkg() {
 export -f doinstpkg
 
 doexecpkg() {
-	exec "$(which $1)" &>/dev/null
+	exec "$(which $1 &>/dev/null)" || $(${InfoSnd})
 	return
 }
 export -f doexecpkg
 
 domanpage() {
-	xterm -e "man $1"
+	xterm -e "man $1 || $(${InfoSnd})"
 	return
 }
 export -f domanpage
 
-dopopup() {
+doaction() {
+	export -f doscan4pkgs
+	export InfoSnd
 	export manager=$1
 	export package=$3
-	export -f doscan4pkgs
 	yad	--form --width=400 --borders=9 --align=center --center --fixed \
-		--skip-taskbar --title="Choose action:" \
+		--skip-taskbar --close-on-unfocus --title="Choose action:" \
 		--image="dialog-information" --image-on-top \
 		--text="Please, choose your desired action from the list below by clicking on its elements." \
 		--field="<span color='#006699'>Reinstall/Update selected package</span>!gtk-refresh":btn 'bash -c "doreinstpkg $manager $package"' \
 		--field="<span color='#006699'>Uninstall/Remove selected package</span>!gtk-delete":btn 'bash -c "doremovepkg $manager $package"' \
-		--field="<span color='#006699'>Install a package from the selected category</span>!gtk-go-down":btn 'bash -c "doinstpkg $manager"' \
+		--field="<span color='#006699'>Install a package of the selected category</span>!gtk-go-down":btn 'bash -c "doinstpkg $manager"' \
 		--field="":lbl '' \
-		--field="<span color='#006699'>Try to run selected package</span>!gtk-execute":btn 'bash -c "doexecpkg $package"' \
-		--field="<span color='#006699'>Try to view the man page of the selected package</span>!gtk-help":btn 'bash -c "domanpage $package"' \
+		--field="<span color='#006699'>Try to <i>execute</i> the selected package</span>!gtk-execute":btn 'bash -c "doexecpkg $package"' \
+		--field="<span color='#006699'>Try to view the <i>man page</i> of the selected package</span>!gtk-help":btn 'bash -c "domanpage $package"' \
 		--buttons-layout="center" \
 		--button=$"Close!gtk-close!Closes the current dialog":0 &>/dev/null &
 
@@ -97,13 +109,13 @@ dopopup() {
 	fi
 	return
 }
-export -f dopopup
+export -f doaction
 
-# ---[ Buttons Functionality ]-------------------------------------------------|
+# ---[ Buttons functionality ]-------------------------------------------------|
 
 doabout() {
 	yad	--form --width=400 --borders=9 --align=center --center --fixed \
-		--skip-taskbar --title="About Yet another Arch Linux PAckage Manager" \
+		--skip-taskbar --close-on-unfocus --title="About Yet another Arch Linux PAckage Manager" \
 		--image="system-software-install" --image-on-top \
 		--text="<span font_size='medium' font_weight='bold'>Yet another Arch Linux PAckage Manager</span>\nby John A Ginis (a.k.a. <a href='https://github.com/drxspace'>drxspace</a>)\n<span font_size='small'>build on Summer of 2017</span>" \
 		--field="":lbl '' \
@@ -169,13 +181,13 @@ echo 'frmAboutPIDs=()
 frmPopupPIDs=()' > ${frunningPIDs}
 
 yad --plug="${fkey}" --tabnum=1 --list --grid-lines="hor" \
-    --dclick-action='bash -c "dopopup pacman %s %s %s"' \
+    --dclick-action='bash -c "doaction pacman %s %s %s"' \
     --text "List of <i>System</i> packages:" \
     --search-column=2 --expand-column=2 --focus-field=1 \
     --column='No:':num --column='Package Name' --column='Package Version' <&3 &
 
 yad --plug="${fkey}" --tabnum=2 --list --grid-lines="hor" \
-    --dclick-action='bash -c "dopopup yaourt %s %s %s"' \
+    --dclick-action='bash -c "doaction yaourt %s %s %s"' \
     --text "List of <i>Local/AUR</i> packages:" \
     --search-column=2 --expand-column=2 --focus-field=1 \
     --column='No:':num --column='Package Name' --column='Package Version' <&4 &
