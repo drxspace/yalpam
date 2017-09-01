@@ -8,28 +8,37 @@
 #                                    /_/           drxspace@gmail.com
 #
 #set -e
-#
-set -x
+#set -x
 
 [[ -x "$(which paplay)" ]] && [[ -d /usr/share/sounds/freedesktop/stereo/ ]] && {
-	export ErrorSnd="$(which paplay) /usr/share/sounds/freedesktop/stereo/dialog-error.oga"
-	export InfoSnd="$(which paplay) /usr/share/sounds/freedesktop/stereo/dialog-information.oga"
+	export errorSnd="$(which paplay) /usr/share/sounds/freedesktop/stereo/dialog-error.oga"
+	export infoSnd="$(which paplay) /usr/share/sounds/freedesktop/stereo/dialog-information.oga"
 }
 
-# Check to see if all needed tools are present
-# Prerequisites
-if ! hash yad &>/dev/null; then
-	$(${ErrorSnd});
+export yalpamTitle="Yet another Arch Linux PAckage Manager"
+export yalpamName="yalpam"
+export yalpamVersion="0.0.171"
+
+msg() {
+	$(${errorSnd});
 	if ! hash notify-send &>/dev/null; then
-		echo -e ":: \e[1myad\e[0m command not found." 1>&2;
-		exit 10;
+		echo -e ":: \e[1m$1\e[0m $2" 1>&2;
+		exit $3;
 	else
-		notify-send "Yet another Arch Linux PAckage Manager" "<b>yad</b> command not found." -i face-worried;
-		exit 20;
+		notify-send "${yalpamTitle}" "<b>$1</b> $2" -i face-worried;
+		exit $(($3 + 5));
 	fi
-elif [ -n $(yad --version | grep "GTK+ 2") ]; then
-	notify-send "Yet another Arch Linux PAckage Manager" "<b>yad</b> command uses an unsupported <i>GTK+ platform</i> version." -i face-worried
-	$(${InfoSnd}); exit 30;
+}
+export -f msg
+
+# Prerequisites
+# Check to see if all needed tools are present
+if ! hash yad &>/dev/null; then
+	msg "yad" "command not found." 10
+elif ! hash yaourt &>/dev/null; then
+	msg "yaourt" "command not found." 20
+elif [ -z "$(yad --version | grep 'GTK+ 2')" ]; then
+	msg "yad" "command uses an unsupported GTK+ platform version." 30
 fi
 
 fkey=$(($RANDOM * $$))
@@ -38,51 +47,62 @@ export fpipepkgssys=$(mktemp -u --tmpdir pkgssys.XXXXXXXX)
 export fpipepkgslcl=$(mktemp -u --tmpdir pkgslcl.XXXXXXXX)
 mkfifo "${fpipepkgssys}" "${fpipepkgslcl}"
 export frunningPIDs=$(mktemp -u --tmpdir runningPIDs.XXXXXXXX)
+export GDK_BACKEND=x11			# https://groups.google.com/d/msg/yad-common/Jnt-zCeCVg4/Gwzx-O-2BQAJ
+
+declare -a runningPIDs=()
 
 #export V=true				# V for verbose
 #	${V} && { echo "$1 $2 $3 $4" 1>&2; }
 # --close-on-unfocus
 # declare/local -x
 
-declare -a runningPIDs=()
-
 # ---[ Action functions ]------------------------------------------------------|
 
 doreinstpkg() {
-	xterm -e "[[ \"$1\" == \"pacman\" ]] && { sudo $1 -Sy --force --noconfirm $2; } || { $1 -Sya --force --noconfirm $2; }"
+	xterm -geometry 152x32 -e "[[ \"$1\" == \"pacman\" ]] && { sudo $1 -Sy --force --noconfirm $2; } || { $1 -Sya --force --noconfirm $2; }"
 	doscan4pkgs
 	return
 }
 export -f doreinstpkg
 
 doremovepkg() {
-	xterm -e "sudo $1 -Rsun $2"
+	xterm -geometry 152x32 -e "sudo $1 -Rsun $2"
 	doscan4pkgs
 	return
 }
 export -f doremovepkg
 
 doinstpkg() {
-	doscan4pkgs
+	until [[ "${packagenames}" ]] || [[ $ret -eq 1 ]]; do
+		local packagenames=$(yad --entry --width=320 --borders=3 --align=center --center --fixed \
+				--skip-taskbar --title="Enter a package name:" \
+				--entry-text="${packagenames}" \
+				--button="gtk-cancel:1" --button="gtk-ok:0")
+		local ret=$?
+	done
+
+	[[ $ret -eq 0 ]] && [[ "${packagenames}" ]] && {
+		xterm -geometry 152x32 -e "[[ \"$1\" == \"pacman\" ]] && { sudo $1 -Sy \"${packagenames}\"; } || { $1 -Sya \"${packagenames}\"; }"
+		doscan4pkgs
+	}
 	return
 }
 export -f doinstpkg
 
 doexecpkg() {
-	exec "$(which $1 &>/dev/null)" || $(${InfoSnd})
+	[[ -x "$(which $1 2>/dev/null)" ]] || $(${infoSnd}) && $1
 	return
 }
 export -f doexecpkg
 
 domanpage() {
-	xterm -e "man $1 || $(${InfoSnd})"
+	man $1 &>/dev/null || $(${infoSnd}) && xterm -geometry 84x40 -e man $1
 	return
 }
 export -f domanpage
 
 doaction() {
 	export -f doscan4pkgs
-	export InfoSnd
 	export manager=$1
 	export package=$3
 	yad	--form --width=400 --borders=9 --align=center --center --fixed \
@@ -114,10 +134,10 @@ export -f doaction
 # ---[ Buttons functionality ]-------------------------------------------------|
 
 doabout() {
-	yad	--form --width=400 --borders=9 --align=center --center --fixed \
-		--skip-taskbar --close-on-unfocus --title="About Yet another Arch Linux PAckage Manager" \
+	yad	--form --width=420 --borders=9 --align=center --center --fixed \
+		--skip-taskbar --close-on-unfocus --title="About ${yalpamTitle}" \
 		--image="system-software-install" --image-on-top \
-		--text="<span font_size='medium' font_weight='bold'>Yet another Arch Linux PAckage Manager</span>\nby John A Ginis (a.k.a. <a href='https://github.com/drxspace'>drxspace</a>)\n<span font_size='small'>build on Summer of 2017</span>" \
+		--text="<span font_size='medium' font_weight='bold'>${yalpamTitle} v${yalpamVersion}</span>\nby John A Ginis (a.k.a. <a href='https://github.com/drxspace'>drxspace</a>)\n<span font_size='small'>build on Summer of 2017</span>" \
 		--field="":lbl '' \
 		--field="These are packages from all enabled repositories except for base and base-devel ones. Also, you\'ll find packages that are locally installed such as AUR packages.":lbl '' \
 		--field="":lbl '' \
@@ -194,13 +214,13 @@ yad --plug="${fkey}" --tabnum=2 --list --grid-lines="hor" \
 
 yad --key="${fkey}" --notebook --width=520 --height=640 \
     --borders=9 --tab-borders=3 --active-tab=1 --focus-field=1 \
-    --window-icon="system-software-install" --title="Yet another Arch Linux PAckage Manager" \
+    --window-icon="system-software-install" --title="${yalpamTitle} v${yalpamVersion}" \
     --image="system-software-install" --image-on-top \
     --text="<span font_size='medium' font_weight='bold'>View Lists of Installed Packages</span>\n\
 These are packages from all enabled repositories except for <i>base</i> repository. Also, you\'ll find packages that are locally installed such as <i>AUR</i> packages." \
     --tab=" <i>System</i> packages category" --tab=" <i>Local/AUR</i> packages category" \
-    --button="<span color='#0066ff'>List packages</span>!system-search!Scans databases for installed packages:bash -c 'doscan4pkgs'" \
-    --button="Save packages!gtk-save!Saves packages lists to disk:bash -c 'dosavepkglists'" \
+    --button="<span color='#0066ff'>List/Update</span>!system-search!Scans databases for installed packages:bash -c 'doscan4pkgs'" \
+    --button="Save/Backup!gtk-save!Saves packages lists to disk for later use:bash -c 'dosavepkglists'" \
     --button="gtk-about:bash -c 'doabout'" \
     --button="gtk-close":0
 
