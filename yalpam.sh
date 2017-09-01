@@ -8,7 +8,8 @@
 #                                    /_/           drxspace@gmail.com
 #
 #set -e
-#set -x
+#
+set -x
 
 [[ -x "$(which paplay)" ]] && [[ -d /usr/share/sounds/freedesktop/stereo/ ]] && {
 	export errorSnd="$(which paplay) /usr/share/sounds/freedesktop/stereo/dialog-error.oga"
@@ -17,7 +18,7 @@
 
 export yalpamTitle="Yet another Arch Linux PAckage Manager"
 export yalpamName="yalpam"
-export yalpamVersion="0.0.171"
+export yalpamVersion="0.0.180"
 
 msg() {
 	$(${errorSnd});
@@ -29,7 +30,6 @@ msg() {
 		exit $(($3 + 5));
 	fi
 }
-export -f msg
 
 # Prerequisites
 # Check to see if all needed tools are present
@@ -43,10 +43,11 @@ fi
 
 fkey=$(($RANDOM * $$))
 
+export frunningPIDs=$(mktemp -u --tmpdir runningPIDs.XXXXXXXX)
 export fpipepkgssys=$(mktemp -u --tmpdir pkgssys.XXXXXXXX)
 export fpipepkgslcl=$(mktemp -u --tmpdir pkgslcl.XXXXXXXX)
 mkfifo "${fpipepkgssys}" "${fpipepkgslcl}"
-export frunningPIDs=$(mktemp -u --tmpdir runningPIDs.XXXXXXXX)
+
 export GDK_BACKEND=x11			# https://groups.google.com/d/msg/yad-common/Jnt-zCeCVg4/Gwzx-O-2BQAJ
 
 declare -a runningPIDs=()
@@ -73,24 +74,29 @@ doremovepkg() {
 export -f doremovepkg
 
 doinstpkg() {
+	fxtermstatus=$(mktemp -u --tmpdir xtermstatus.XXXXXXXX)
+	local packagenames=
+	local ret=
 	until [[ "${packagenames}" ]] || [[ $ret -eq 1 ]]; do
-		local packagenames=$(yad --entry --width=320 --borders=3 --align=center --center --fixed \
-				--skip-taskbar --title="Enter a package name:" \
-				--entry-text="${packagenames}" \
-				--button="gtk-cancel:1" --button="gtk-ok:0")
-		local ret=$?
+		packagenames=$(yad	--entry --width=320 --borders=9 --align=center --center --fixed \
+					--skip-taskbar --title="Enter package names..." \
+					--text="Input here one or more package names separated\nby <i>blank</i> characters:" \
+					--entry-text="${packagenames}" \
+					--button="gtk-cancel:1" --button="gtk-ok:0")
+		ret=$?
 	done
 
 	[[ $ret -eq 0 ]] && [[ "${packagenames}" ]] && {
-		xterm -geometry 152x32 -e "[[ \"$1\" == \"pacman\" ]] && { sudo $1 -Sy \"${packagenames}\"; } || { $1 -Sya \"${packagenames}\"; }"
-		doscan4pkgs
+		xterm -geometry 152x32 -e "[[ \"$1\" == \"pacman\" ]] && { sudo $1 -Sy ${packagenames}; } || { $1 -Sya ${packagenames}; }; echo $? > ${fxtermstatus}"
+		[[ $(<$fxtermstatus) -eq 0 ]] && doscan4pkgs || $(${infoSnd})
 	}
+	rm -f ${fxtermstatus}
 	return
 }
 export -f doinstpkg
 
 doexecpkg() {
-	[[ -x "$(which $1 2>/dev/null)" ]] || $(${infoSnd}) && $1
+	$1 || $(${infoSnd})
 	return
 }
 export -f doexecpkg
@@ -105,7 +111,7 @@ doaction() {
 	export -f doscan4pkgs
 	export manager=$1
 	export package=$3
-	yad	--form --width=400 --borders=9 --align=center --center --fixed \
+	yad	--form --width=480 --borders=9 --align=center --center --fixed \
 		--skip-taskbar --close-on-unfocus --title="Choose action:" \
 		--image="dialog-information" --image-on-top \
 		--text="Please, choose your desired action from the list below by clicking on its elements." \
@@ -134,7 +140,7 @@ export -f doaction
 # ---[ Buttons functionality ]-------------------------------------------------|
 
 doabout() {
-	yad	--form --width=420 --borders=9 --align=center --center --fixed \
+	yad	--form --width=480 --borders=9 --align=center --center --fixed \
 		--skip-taskbar --close-on-unfocus --title="About ${yalpamTitle}" \
 		--image="system-software-install" --image-on-top \
 		--text="<span font_size='medium' font_weight='bold'>${yalpamTitle} v${yalpamVersion}</span>\nby John A Ginis (a.k.a. <a href='https://github.com/drxspace'>drxspace</a>)\n<span font_size='small'>build on Summer of 2017</span>" \
@@ -178,12 +184,12 @@ doscan4pkgs() {
 		grep -vx --line-buffered "$(pacman -Qm)" |\
 		awk '{printf "%d\n%s\n%s\n", ++i, $1, $2}' |\
 		tee -a "${fpipepkgssys}" |\
-		yad --progress --pulsate --auto-close --no-buttons --width=300 --align=center --center --fixed --borders=9 --skip-taskbar --title="Querying packages" --text-align="center" --text="One moment please. Querying <i>System</i> packages..."
+		yad --progress --pulsate --auto-close --no-buttons --width=320 --align=center --center --borders=9 --skip-taskbar --title="Querying packages" --text-align="center" --text="One moment please. Querying <i>System</i> packages..."
 
 	echo -e '\f' >> "${fpipepkgslcl}"
 	pacman -Qm | awk '{printf "%d\n%s\n%s\n", ++i, $1, $2}' |\
 		tee -a "${fpipepkgslcl}" |\
-		yad --progress --pulsate --auto-close --no-buttons --width=300 --align=center --center --fixed --borders=9 --skip-taskbar --title="Querying packages" --text-align="center" --text="One moment please. Querying <i>Local/AUR</i> packages..."
+		yad --progress --pulsate --auto-close --no-buttons --width=320 --align=center --center --borders=9 --skip-taskbar --title="Querying packages" --text-align="center" --text="One moment please. Querying <i>Local/AUR</i> packages..."
 	return
 }
 export -f doscan4pkgs
@@ -204,15 +210,15 @@ yad --plug="${fkey}" --tabnum=1 --list --grid-lines="hor" \
     --dclick-action='bash -c "doaction pacman %s %s %s"' \
     --text "List of <i>System</i> packages:" \
     --search-column=2 --expand-column=2 --focus-field=1 \
-    --column='No:':num --column='Package Name' --column='Package Version' <&3 &
+    --column='No:':num --column='Package Name' --column='Package Version' <&3 &>/dev/null &
 
 yad --plug="${fkey}" --tabnum=2 --list --grid-lines="hor" \
     --dclick-action='bash -c "doaction yaourt %s %s %s"' \
     --text "List of <i>Local/AUR</i> packages:" \
     --search-column=2 --expand-column=2 --focus-field=1 \
-    --column='No:':num --column='Package Name' --column='Package Version' <&4 &
+    --column='No:':num --column='Package Name' --column='Package Version' <&4 &>/dev/null &
 
-yad --key="${fkey}" --notebook --width=520 --height=640 \
+yad --key="${fkey}" --notebook --width=480 --height=640 \
     --borders=9 --tab-borders=3 --active-tab=1 --focus-field=1 \
     --window-icon="system-software-install" --title="${yalpamTitle} v${yalpamVersion}" \
     --image="system-software-install" --image-on-top \
@@ -222,7 +228,7 @@ These are packages from all enabled repositories except for <i>base</i> reposito
     --button="<span color='#0066ff'>List/Update</span>!system-search!Scans databases for installed packages:bash -c 'doscan4pkgs'" \
     --button="Save/Backup!gtk-save!Saves packages lists to disk for later use:bash -c 'dosavepkglists'" \
     --button="gtk-about:bash -c 'doabout'" \
-    --button="gtk-close":0
+    --button="gtk-close":0 &>/dev/null
 
 exec 3>&-
 exec 4>&-
@@ -235,8 +241,8 @@ runningPIDs+=${frmAboutPIDs[@]}
 runningPIDs+=${frmPopupPIDs[@]}
 
 [[ "${runningPIDs}" ]] && {
-	eval "kill -15 ${runningPIDs[@]}" &>/dev/null
-#	[[ "${#runningPIDs[@]}" -ge 1 ]] && eval "kill -15 ${runningPIDs[@]}" &>/dev/null
+	eval "kill -15 ${runningPIDs[@]}"
+#	[[ "${#runningPIDs[@]}" -ge 1 ]] && eval "kill -15 ${runningPIDs[@]}"
 	sleep 4
 }
 
