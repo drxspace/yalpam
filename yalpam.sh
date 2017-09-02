@@ -11,18 +11,18 @@
 #
 set -x
 
-[[ -x "$(which paplay)" ]] && [[ -d /usr/share/sounds/freedesktop/stereo/ ]] && {
-	export errorSnd="$(which paplay) /usr/share/sounds/freedesktop/stereo/dialog-error.oga"
-	export infoSnd="$(which paplay) /usr/share/sounds/freedesktop/stereo/dialog-information.oga"
+hash paplay 2>/dev/null && [[ -d /usr/share/sounds/freedesktop/stereo/ ]] && {
+	export errorSnd="paplay /usr/share/sounds/freedesktop/stereo/dialog-error.oga"
+	export infoSnd="paplay /usr/share/sounds/freedesktop/stereo/dialog-information.oga"
 }
 
 export yalpamTitle="Yet another Arch Linux PAckage Manager"
 export yalpamName="yalpam"
-export yalpamVersion="0.0.180"
+export yalpamVersion="0.0.190"
 
 msg() {
 	$(${errorSnd});
-	if ! hash notify-send &>/dev/null; then
+	if ! hash notify-send 2>/dev/null; then
 		echo -e ":: \e[1m$1\e[0m $2" 1>&2;
 		exit $3;
 	else
@@ -33,9 +33,9 @@ msg() {
 
 # Prerequisites
 # Check to see if all needed tools are present
-if ! hash yad &>/dev/null; then
+if ! hash yad 2>/dev/null; then
 	msg "yad" "command not found." 10
-elif ! hash yaourt &>/dev/null; then
+elif ! hash yaourt 2>/dev/null; then
 	msg "yaourt" "command not found." 20
 elif [ -z "$(yad --version | grep 'GTK+ 2')" ]; then
 	msg "yad" "command uses an unsupported GTK+ platform version." 30
@@ -79,7 +79,7 @@ doinstpkg() {
 	local ret=
 	until [[ "${packagenames}" ]] || [[ $ret -eq 1 ]]; do
 		packagenames=$(yad	--entry --width=320 --borders=9 --align=center --center --fixed \
-					--skip-taskbar --title="Enter package names..." \
+					--skip-taskbar --close-on-unfocus --title="Enter package names..." \
 					--text="Input here one or more package names separated\nby <i>blank</i> characters:" \
 					--entry-text="${packagenames}" \
 					--button="gtk-cancel:1" --button="gtk-ok:0")
@@ -94,6 +94,14 @@ doinstpkg() {
 	return
 }
 export -f doinstpkg
+
+docrawl() {
+	[[ -x $BROWSER ]] || BROWSER=$(command -v xdg-open 2>/dev/null || command -v gnome-open 2>/dev/null)
+	[[ "$1" == "pacman" ]] && { URL="https://www.archlinux.org/packages/?sort=&q=${2}&maintainer=&flagged="; } || { URL="https://aur.archlinux.org/packages/?O=0&SeB=n&K=${2}&outdated=&SB=n&SO=a&PP=50&do_Search=Go"; }
+	exec "$BROWSER" "$URL"
+	return
+}
+export -f docrawl
 
 doexecpkg() {
 	$1 || $(${infoSnd})
@@ -118,6 +126,8 @@ doaction() {
 		--field="<span color='#006699'>Reinstall/Update selected package</span>!gtk-refresh":btn 'bash -c "doreinstpkg $manager $package"' \
 		--field="<span color='#006699'>Uninstall/Remove selected package</span>!gtk-delete":btn 'bash -c "doremovepkg $manager $package"' \
 		--field="<span color='#006699'>Install a package of the selected category</span>!gtk-go-down":btn 'bash -c "doinstpkg $manager"' \
+		--field="":lbl '' \
+		--field="<span color='#006699'>Browse the package on the web</span>!gtk-home":btn 'bash -c "docrawl $manager $package"' \
 		--field="":lbl '' \
 		--field="<span color='#006699'>Try to <i>execute</i> the selected package</span>!gtk-execute":btn 'bash -c "doexecpkg $package"' \
 		--field="<span color='#006699'>Try to view the <i>man page</i> of the selected package</span>!gtk-help":btn 'bash -c "domanpage $package"' \
@@ -145,7 +155,7 @@ doabout() {
 		--image="system-software-install" --image-on-top \
 		--text="<span font_size='medium' font_weight='bold'>${yalpamTitle} v${yalpamVersion}</span>\nby John A Ginis (a.k.a. <a href='https://github.com/drxspace'>drxspace</a>)\n<span font_size='small'>build on Summer of 2017</span>" \
 		--field="":lbl '' \
-		--field="These are packages from all enabled repositories except for base and base-devel ones. Also, you\'ll find packages that are locally installed such as AUR packages.":lbl '' \
+		--field="...":lbl '' \
 		--field="":lbl '' \
 		--buttons-layout="center" \
 		--button=$"Close!gtk-close!Closes the current dialog":0 &>/dev/null &
