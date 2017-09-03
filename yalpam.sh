@@ -7,7 +7,8 @@
 # \__,_/   /_/     /_/|_|  /_____/   _  .___/ /_/  |_|\____/   /_____/
 #                                    /_/           drxspace@gmail.com
 #
-#set -e
+#
+set -e
 #
 set -x
 
@@ -18,7 +19,7 @@ hash paplay 2>/dev/null && [[ -d /usr/share/sounds/freedesktop/stereo/ ]] && {
 
 export yalpamTitle="Yet another Arch Linux PAckage Manager"
 export yalpamName="yalpam"
-export yalpamVersion="0.0.190"
+export yalpamVersion="0.0.202"
 
 msg() {
 	$(${errorSnd});
@@ -67,25 +68,25 @@ doreinstpkg() {
 export -f doreinstpkg
 
 doremovepkg() {
-	xterm -geometry 152x32 -e "sudo $1 -Rsun $2"
+	xterm -geometry 152x32 -e "sudo $1 -Rcsn $2"
 	doscan4pkgs
 	return
 }
 export -f doremovepkg
 
 doinstpkg() {
-	fxtermstatus=$(mktemp -u --tmpdir xtermstatus.XXXXXXXX)
 	local packagenames=
 	local ret=
 	until [[ "${packagenames}" ]] || [[ $ret -eq 1 ]]; do
 		packagenames=$(yad	--entry --width=320 --borders=9 --align=center --center --fixed \
-					--skip-taskbar --close-on-unfocus --title="Enter package names..." \
+					--skip-taskbar --title="Enter package names..." \
 					--text="Input here one or more package names separated\nby <i>blank</i> characters:" \
 					--entry-text="${packagenames}" \
 					--button="gtk-cancel:1" --button="gtk-ok:0")
 		ret=$?
 	done
 
+	fxtermstatus=$(mktemp -u --tmpdir xtermstatus.XXXXXXXX)
 	[[ $ret -eq 0 ]] && [[ "${packagenames}" ]] && {
 		xterm -geometry 152x32 -e "[[ \"$1\" == \"pacman\" ]] && { sudo $1 -Sy ${packagenames}; } || { $1 -Sya ${packagenames}; }; echo $? > ${fxtermstatus}"
 		[[ $(<$fxtermstatus) -eq 0 ]] && doscan4pkgs || $(${infoSnd})
@@ -97,7 +98,11 @@ export -f doinstpkg
 
 docrawl() {
 	[[ -x $BROWSER ]] || BROWSER=$(command -v xdg-open 2>/dev/null || command -v gnome-open 2>/dev/null)
-	[[ "$1" == "pacman" ]] && { URL="https://www.archlinux.org/packages/?sort=&q=${2}&maintainer=&flagged="; } || { URL="https://aur.archlinux.org/packages/?O=0&SeB=n&K=${2}&outdated=&SB=n&SO=a&PP=50&do_Search=Go"; }
+	[[ "$1" == "pacman" ]] && {
+		URL="https://www.archlinux.org/packages/?sort=&q=${2}&maintainer=&flagged=";
+	} || {
+		URL="https://aur.archlinux.org/packages/?O=0&SeB=n&K=${2}&outdated=&SB=n&SO=a&PP=50&do_Search=Go";
+	}
 	exec "$BROWSER" "$URL"
 	return
 }
@@ -120,7 +125,7 @@ doaction() {
 	export manager=$1
 	export package=$3
 	yad	--form --width=480 --borders=9 --align=center --center --fixed \
-		--skip-taskbar --close-on-unfocus --title="Choose action:" \
+		--skip-taskbar --title="Choose action:" \
 		--image="dialog-information" --image-on-top \
 		--text="Please, choose your desired action from the list below by clicking on its elements." \
 		--field="<span color='#006699'>Reinstall/Update selected package</span>!gtk-refresh":btn 'bash -c "doreinstpkg $manager $package"' \
@@ -151,7 +156,7 @@ export -f doaction
 
 doabout() {
 	yad	--form --width=480 --borders=9 --align=center --center --fixed \
-		--skip-taskbar --close-on-unfocus --title="About ${yalpamTitle}" \
+		--skip-taskbar --title="About ${yalpamTitle}" \
 		--image="system-software-install" --image-on-top \
 		--text="<span font_size='medium' font_weight='bold'>${yalpamTitle} v${yalpamVersion}</span>\nby John A Ginis (a.k.a. <a href='https://github.com/drxspace'>drxspace</a>)\n<span font_size='small'>build on Summer of 2017</span>" \
 		--field="":lbl '' \
@@ -191,7 +196,7 @@ doscan4pkgs() {
 	echo -e '\f' >> "${fpipepkgssys}"
 	pacman -Qe |\
 		grep -vx "$(pacman -Qg base)" |\
-		grep -vx --line-buffered "$(pacman -Qm)" |\
+		grep -vx "$(pacman -Qm)" |\
 		awk '{printf "%d\n%s\n%s\n", ++i, $1, $2}' |\
 		tee -a "${fpipepkgssys}" |\
 		yad --progress --pulsate --auto-close --no-buttons --width=320 --align=center --center --borders=9 --skip-taskbar --title="Querying packages" --text-align="center" --text="One moment please. Querying <i>System</i> packages..."
@@ -206,7 +211,7 @@ export -f doscan4pkgs
 
 # -----------------------------------------------------------------------------|
 
-trap "rm -f ${fpipepkgssys} ${fpipepkgslcl} ${frunningPIDs};" EXIT
+trap "rm -f ${fpipepkgssys} ${fpipepkgslcl} ${frunningPIDs}" EXIT
 
 # -----------------------------------------------------------------------------|
 
@@ -236,7 +241,7 @@ yad --key="${fkey}" --notebook --width=480 --height=640 \
 These are packages from all enabled repositories except for <i>base</i> repository. Also, you\'ll find packages that are locally installed such as <i>AUR</i> packages." \
     --tab=" <i>System</i> packages category" --tab=" <i>Local/AUR</i> packages category" \
     --button="<span color='#0066ff'>List/Update</span>!system-search!Scans databases for installed packages:bash -c 'doscan4pkgs'" \
-    --button="Save/Backup!gtk-save!Saves packages lists to disk for later use:bash -c 'dosavepkglists'" \
+    --button="Save/Backup!gtk-save!Saves package lists to disk for later use:bash -c 'dosavepkglists'" \
     --button="gtk-about:bash -c 'doabout'" \
     --button="gtk-close":0 &>/dev/null
 
