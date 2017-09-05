@@ -19,7 +19,7 @@ hash paplay 2>/dev/null && [[ -d /usr/share/sounds/freedesktop/stereo/ ]] && {
 
 export yalpamTitle="Yet another Arch Linux PAckage Manager"
 export yalpamName="yalpam"
-export yalpamVersion="0.0.202"
+export yalpamVersion="0.0.240"
 
 msg() {
 	$(${errorSnd});
@@ -79,11 +79,16 @@ doinstpkg() {
 	local ret=
 	until [[ "${packagenames}" ]] || [[ $ret -eq 1 ]]; do
 		packagenames=$(yad	--entry --width=320 --borders=9 --align=center --center --fixed \
-					--skip-taskbar --title="Enter package names..." \
+					--skip-taskbar --title="Enter package name(s)..." \
 					--text="Input here one or more package names separated\nby <i>blank</i> characters:" \
 					--entry-text="${packagenames}" \
-					--button="gtk-cancel:1" --button="gtk-ok:0")
-		ret=$?
+					--button="gtk-cancel:1" --button="gtk-ok:0") &
+		local pid=$(pidof yad)
+		sed -i "s/openedFormPIDs=(\(.*\))/openedFormPIDs=(\1 $(echo ${pid}))/" ${frunningPIDs}
+		wait ${pid}
+		local ret=$?
+		[[ -e ${frunningPIDs} ]] && sed -i "s/ $(echo ${pid})//" ${frunningPIDs}
+		[[ ${ret-1} -gt 1 ]] && ret=1
 	done
 
 	fxtermstatus=$(mktemp -u --tmpdir xtermstatus.XXXXXXXX)
@@ -121,10 +126,13 @@ domanpage() {
 export -f domanpage
 
 doaction() {
+	export frunningPIDs
 	export -f doscan4pkgs
+
 	export manager=$1
 	export package=$3
-	yad	--form --width=480 --borders=9 --align=center --center --fixed \
+
+	yad	--form --width=340 --borders=3 --align=center --fixed \
 		--skip-taskbar --title="Choose action:" \
 		--image="dialog-information" --image-on-top \
 		--text="Please, choose your desired action from the list below by clicking on its elements." \
@@ -140,14 +148,10 @@ doaction() {
 		--button=$"Close!gtk-close!Closes the current dialog":0 &>/dev/null &
 
 	local pid=$!
-	sed -i "s/frmPopupPIDs=(\(.*\))/frmPopupPIDs=(\1 $(echo ${pid}))/" ${frunningPIDs}
+	sed -i "s/openedFormPIDs=(\(.*\))/openedFormPIDs=(\1 $(echo ${pid}))/" ${frunningPIDs}
 	wait ${pid}
-	local Closed=$?
-	if [[ -e ${frunningPIDs} ]]; then
-		if [[ ${Closed} ]]; then
-			sed -i "s/ $(echo ${pid})//" ${frunningPIDs}
-		fi
-	fi
+#	local ret=$?
+	[[ -e ${frunningPIDs} ]] && sed -i "s/ $(echo ${pid})//" ${frunningPIDs}
 	return
 }
 export -f doaction
@@ -155,7 +159,7 @@ export -f doaction
 # ---[ Buttons functionality ]-------------------------------------------------|
 
 doabout() {
-	yad	--form --width=480 --borders=9 --align=center --center --fixed \
+	yad	--form --width=480 --borders=9 --align=center --fixed \
 		--skip-taskbar --title="About ${yalpamTitle}" \
 		--image="system-software-install" --image-on-top \
 		--text="<span font_size='medium' font_weight='bold'>${yalpamTitle} v${yalpamVersion}</span>\nby John A Ginis (a.k.a. <a href='https://github.com/drxspace'>drxspace</a>)\n<span font_size='small'>build on Summer of 2017</span>" \
@@ -166,14 +170,10 @@ doabout() {
 		--button=$"Close!gtk-close!Closes the current dialog":0 &>/dev/null &
 
 	local pid=$!
-	sed -i "s/frmAboutPIDs=(\(.*\))/frmAboutPIDs=(\1 $(echo ${pid}))/" ${frunningPIDs}
+	sed -i "s/openedFormPIDs=(\(.*\))/openedFormPIDs=(\1 $(echo ${pid}))/" ${frunningPIDs}
 	wait ${pid}
-	local Closed=$?
-	if [[ -e ${frunningPIDs} ]]; then
-		if [[ ${Closed} ]]; then
-			sed -i "s/ $(echo ${pid})//" ${frunningPIDs}
-		fi
-	fi
+#	local ret=$?
+	[[ -e ${frunningPIDs} ]] && sed -i "s/ $(echo ${pid})//" ${frunningPIDs}
 	return
 }
 export -f doabout
@@ -211,15 +211,10 @@ export -f doscan4pkgs
 
 # -----------------------------------------------------------------------------|
 
-trap "rm -f ${fpipepkgssys} ${fpipepkgslcl} ${frunningPIDs}" EXIT
-
-# -----------------------------------------------------------------------------|
-
 exec 3<> ${fpipepkgssys}
 exec 4<> ${fpipepkgslcl}
 
-echo 'frmAboutPIDs=()
-frmPopupPIDs=()' > ${frunningPIDs}
+echo 'openedFormPIDs=()' > ${frunningPIDs}
 
 yad --plug="${fkey}" --tabnum=1 --list --grid-lines="hor" \
     --dclick-action='bash -c "doaction pacman %s %s %s"' \
@@ -245,20 +240,25 @@ These are packages from all enabled repositories except for <i>base</i> reposito
     --button="gtk-about:bash -c 'doabout'" \
     --button="gtk-close":0 &>/dev/null
 
-exec 3>&-
-exec 4>&-
+# -----------------------------------------------------------------------------|
+
+_trapfunc_() {
+	exec 3>&-
+	exec 4>&-
+
+	source ${frunningPIDs}
+	runningPIDs=${openedFormPIDs[@]}
+	[[ "${runningPIDs}" ]] && {
+		eval "kill -15 ${runningPIDs[@]}"
+	#	[[ "${#runningPIDs[@]}" -ge 1 ]] && eval "kill -15 ${runningPIDs[@]}"
+		sleep 5
+	}
+	rm -f ${fpipepkgssys} ${fpipepkgslcl} ${frunningPIDs}
+}
+trap '_trapfunc_' EXIT
 
 # -----------------------------------------------------------------------------|
 
-source ${frunningPIDs}
-runningPIDs+=${frmAboutPIDs[@]}
-[[ "${frmAboutPIDs}" ]] && [[ "${frmPopupPIDs}" ]] && runningPIDs+=' '
-runningPIDs+=${frmPopupPIDs[@]}
 
-[[ "${runningPIDs}" ]] && {
-	eval "kill -15 ${runningPIDs[@]}"
-#	[[ "${#runningPIDs[@]}" -ge 1 ]] && eval "kill -15 ${runningPIDs[@]}"
-	sleep 4
-}
 
 exit $?
