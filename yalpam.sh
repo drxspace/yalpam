@@ -19,7 +19,7 @@ hash paplay 2>/dev/null && [[ -d /usr/share/sounds/freedesktop/stereo/ ]] && {
 
 export yalpamTitle="Yet another Arch Linux PAckage Manager"
 export yalpamName="yalpam"
-export yalpamVersion="0.0.240"
+export yalpamVersion="0.0.250"
 
 msg() {
 	$(${errorSnd});
@@ -82,12 +82,14 @@ doinstpkg() {
 					--skip-taskbar --title="Enter package name(s)..." \
 					--text="Input here one or more package names separated\nby <i>blank</i> characters:" \
 					--entry-text="${packagenames}" \
-					--button="gtk-cancel:1" --button="gtk-ok:0") &
-		local pid=$(pidof yad)
-		sed -i "s/openedFormPIDs=(\(.*\))/openedFormPIDs=(\1 $(echo ${pid}))/" ${frunningPIDs}
+					--button="gtk-cancel:1" --button="gtk-ok:0") & local pid=$!
+		#
+		# I decided to use this terrible idea $((${pid}+3))
+		#
+		sed -i "s/openedFormPIDs=(\(.*\))/openedFormPIDs=(\1 $((${pid}+3)))/" ${frunningPIDs}
 		wait ${pid}
 		local ret=$?
-		[[ -e ${frunningPIDs} ]] && sed -i "s/ $(echo ${pid})//" ${frunningPIDs}
+		[[ -e ${frunningPIDs} ]] && sed -i "s/ $((${pid}+3))//" ${frunningPIDs}
 		[[ ${ret-1} -gt 1 ]] && ret=1
 	done
 
@@ -145,12 +147,9 @@ doaction() {
 		--field="<span color='#006699'>Try to <i>execute</i> the selected package</span>!gtk-execute":btn 'bash -c "doexecpkg $package"' \
 		--field="<span color='#006699'>Try to view the <i>man page</i> of the selected package</span>!gtk-help":btn 'bash -c "domanpage $package"' \
 		--buttons-layout="center" \
-		--button=$"Close!gtk-close!Closes the current dialog":0 &>/dev/null &
-
-	local pid=$!
+		--button=$"Close!gtk-close!Closes the current dialog":0 &>/dev/null & local pid=$!
 	sed -i "s/openedFormPIDs=(\(.*\))/openedFormPIDs=(\1 $(echo ${pid}))/" ${frunningPIDs}
 	wait ${pid}
-#	local ret=$?
 	[[ -e ${frunningPIDs} ]] && sed -i "s/ $(echo ${pid})//" ${frunningPIDs}
 	return
 }
@@ -167,12 +166,9 @@ doabout() {
 		--field="...":lbl '' \
 		--field="":lbl '' \
 		--buttons-layout="center" \
-		--button=$"Close!gtk-close!Closes the current dialog":0 &>/dev/null &
-
-	local pid=$!
+		--button=$"Close!gtk-close!Closes the current dialog":0 &>/dev/null & local pid=$!
 	sed -i "s/openedFormPIDs=(\(.*\))/openedFormPIDs=(\1 $(echo ${pid}))/" ${frunningPIDs}
 	wait ${pid}
-#	local ret=$?
 	[[ -e ${frunningPIDs} ]] && sed -i "s/ $(echo ${pid})//" ${frunningPIDs}
 	return
 }
