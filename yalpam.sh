@@ -19,7 +19,7 @@ hash paplay 2>/dev/null && [[ -d /usr/share/sounds/freedesktop/stereo/ ]] && {
 
 export yalpamTitle="Yet another Arch Linux PAckage Manager"
 export yalpamName="yalpam"
-export yalpamVersion="0.0.250"
+export yalpamVersion="0.0.260"
 
 msg() {
 	$(${errorSnd});
@@ -75,22 +75,30 @@ doremovepkg() {
 export -f doremovepkg
 
 doinstpkg() {
+	local fpackhist=${XDG_CACHE_HOME:-$HOME/.cache}/package.history 
+	touch $fpackhist
 	local packagenames=
 	local ret=
 	until [[ "${packagenames}" ]] || [[ $ret -eq 1 ]]; do
-		packagenames=$(yad	--entry --width=320 --borders=9 --align=center --center --fixed \
-					--skip-taskbar --title="Enter package name(s)..." \
-					--text="Input here one or more package names separated\nby <i>blank</i> characters:" \
-					--entry-text="${packagenames}" \
-					--button="gtk-cancel:1" --button="gtk-ok:0") & local pid=$!
+		yad	--entry --width=320 --borders=9 --align=center --center --fixed \
+			--skip-taskbar --title="Enter package name(s)..." \
+			--text="Input here one or more package names separated\nby <i>blank</i> characters:" \
+			--entry-text="${packagenames}" --rest="${fpackhist}" \
+			--button="gtk-cancel":1 --button="gtk-ok":0 & local pid=$!
+		sed -i "s/openedFormPIDs=(\(.*\))/openedFormPIDs=(\1 $(echo ${pid}))/" ${frunningPIDs}
+		wait ${pid}
+		local ret=$?
+		packagenames=?
+		[[ -e ${frunningPIDs} ]] && sed -i "s/ $(echo ${pid})//" ${frunningPIDs}
+		[[ ${ret-1} -gt 1 ]] && ret=1
 		#
 		# I decided to use this terrible idea $((${pid}+3))
 		#
-		sed -i "s/openedFormPIDs=(\(.*\))/openedFormPIDs=(\1 $((${pid}+3)))/" ${frunningPIDs}
-		wait ${pid}
-		local ret=$?
-		[[ -e ${frunningPIDs} ]] && sed -i "s/ $((${pid}+3))//" ${frunningPIDs}
-		[[ ${ret-1} -gt 1 ]] && ret=1
+		#sed -i "s/openedFormPIDs=(\(.*\))/openedFormPIDs=(\1 $((${pid}+3)))/" ${frunningPIDs}
+		#wait ${pid}
+		#local ret=$?
+		#[[ -e ${frunningPIDs} ]] && sed -i "s/ $((${pid}+3))//" ${frunningPIDs}
+		#[[ ${ret-1} -gt 1 ]] && ret=1
 	done
 
 	fxtermstatus=$(mktemp -u --tmpdir xtermstatus.XXXXXXXX)
@@ -245,7 +253,7 @@ _trapfunc_() {
 	source ${frunningPIDs}
 	runningPIDs=${openedFormPIDs[@]}
 	[[ "${runningPIDs}" ]] && {
-		eval "kill -15 ${runningPIDs[@]}"
+		kill -USR1 ${runningPIDs[@]}
 	#	[[ "${#runningPIDs[@]}" -ge 1 ]] && eval "kill -15 ${runningPIDs[@]}"
 		sleep 5
 	}
