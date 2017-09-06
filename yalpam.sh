@@ -9,8 +9,7 @@
 #
 #
 set -e
-#
-set -x
+#set -x
 
 hash paplay 2>/dev/null && [[ -d /usr/share/sounds/freedesktop/stereo/ ]] && {
 	export errorSnd="paplay /usr/share/sounds/freedesktop/stereo/dialog-error.oga"
@@ -74,31 +73,28 @@ doremovepkg() {
 }
 export -f doremovepkg
 
+function on_click () 
+{ 
+	packagenames="${1}" 
+	kill -s USR1 $YAD_PID 
+} 
+export -f on_click 
+
 doinstpkg() {
-	local fpackhist=${XDG_CACHE_HOME:-$HOME/.cache}/package.history 
-	touch $fpackhist
-	local packagenames=
 	local ret=
+	export packagenames=
 	until [[ "${packagenames}" ]] || [[ $ret -eq 1 ]]; do
-		yad	--entry --width=320 --borders=9 --align=center --center --fixed \
-			--skip-taskbar --title="Enter package name(s)..." \
+		yad	--form --width=320 --borders=9 --align=center --center --fixed --skip-taskbar \
+			--title="Enter package name(s)..." \
 			--text="Input here one or more package names separated\nby <i>blank</i> characters:" \
-			--entry-text="${packagenames}" --rest="${fpackhist}" \
-			--button="gtk-cancel":1 --button="gtk-ok":0 & local pid=$!
+			--field=':CE' '${packagenames}' --complete-regex \
+			--button="gtk-cancel":1 --button='gtk-ok:bash -c "on_click %s"' & local pid=$!
+
 		sed -i "s/openedFormPIDs=(\(.*\))/openedFormPIDs=(\1 $(echo ${pid}))/" ${frunningPIDs}
 		wait ${pid}
 		local ret=$?
-		packagenames=?
 		[[ -e ${frunningPIDs} ]] && sed -i "s/ $(echo ${pid})//" ${frunningPIDs}
 		[[ ${ret-1} -gt 1 ]] && ret=1
-		#
-		# I decided to use this terrible idea $((${pid}+3))
-		#
-		#sed -i "s/openedFormPIDs=(\(.*\))/openedFormPIDs=(\1 $((${pid}+3)))/" ${frunningPIDs}
-		#wait ${pid}
-		#local ret=$?
-		#[[ -e ${frunningPIDs} ]] && sed -i "s/ $((${pid}+3))//" ${frunningPIDs}
-		#[[ ${ret-1} -gt 1 ]] && ret=1
 	done
 
 	fxtermstatus=$(mktemp -u --tmpdir xtermstatus.XXXXXXXX)
@@ -253,7 +249,7 @@ _trapfunc_() {
 	source ${frunningPIDs}
 	runningPIDs=${openedFormPIDs[@]}
 	[[ "${runningPIDs}" ]] && {
-		kill -USR1 ${runningPIDs[@]}
+		kill -s USR2 ${runningPIDs[@]}
 	#	[[ "${#runningPIDs[@]}" -ge 1 ]] && eval "kill -15 ${runningPIDs[@]}"
 		sleep 5
 	}
