@@ -18,7 +18,7 @@ hash paplay 2>/dev/null && [[ -d /usr/share/sounds/freedesktop/stereo/ ]] && {
 
 export yalpamTitle="Yet another Arch Linux PAckage Manager"
 export yalpamName="yalpam"
-export yalpamVersion="0.0.260"
+export yalpamVersion="0.0.290"
 
 msg() {
 	$(${errorSnd});
@@ -82,13 +82,15 @@ export -f on_click
 
 doinstpkg() {
 	local ret=
-	export packagenames=
+	packagenames=
+	export -f on_click 
+	export packagenames
 	until [[ "${packagenames}" ]] || [[ $ret -eq 1 ]]; do
-		yad	--form --width=320 --borders=9 --align=center --center --fixed --skip-taskbar \
-			--title="Enter package name(s)..." \
+		yad	--form --width=380 --borders=9 --align="center" --center --fixed --skip-taskbar \
+			--title="Enter package name(s)..." --image="gtk-cdrom" \
 			--text="Input here one or more package names separated\nby <i>blank</i> characters:" \
-			--field=':CE' '${packagenames}' --complete-regex \
-			--button="gtk-cancel":1 --button='gtk-ok:bash -c "on_click %s"' & local pid=$!
+			--field=':CE' '' \
+			--button="gtk-cancel":1 --button='gtk-ok:bash -c "on_click axax"' & local pid=$!
 
 		sed -i "s/openedFormPIDs=(\(.*\))/openedFormPIDs=(\1 $(echo ${pid}))/" ${frunningPIDs}
 		wait ${pid}
@@ -132,13 +134,13 @@ domanpage() {
 export -f domanpage
 
 doaction() {
-	export frunningPIDs
+	#export frunningPIDs
 	export -f doscan4pkgs
 
 	export manager=$1
 	export package=$3
 
-	yad	--form --width=340 --borders=3 --align=center --fixed \
+	yad	--form --width=340 --borders=3 --align="center" --fixed \
 		--skip-taskbar --title="Choose action:" \
 		--image="dialog-information" --image-on-top \
 		--text="Please, choose your desired action from the list below by clicking on its elements." \
@@ -162,7 +164,7 @@ export -f doaction
 # ---[ Buttons functionality ]-------------------------------------------------|
 
 doabout() {
-	yad	--form --width=480 --borders=9 --align=center --fixed \
+	yad	--form --width=480 --borders=9 --align="center" --fixed \
 		--skip-taskbar --title="About ${yalpamTitle}" \
 		--image="system-software-install" --image-on-top \
 		--text="<span font_size='medium' font_weight='bold'>${yalpamTitle} v${yalpamVersion}</span>\nby John A Ginis (a.k.a. <a href='https://github.com/drxspace'>drxspace</a>)\n<span font_size='small'>build on Summer of 2017</span>" \
@@ -199,12 +201,12 @@ doscan4pkgs() {
 		grep -vx "$(pacman -Qm)" |\
 		awk '{printf "%d\n%s\n%s\n", ++i, $1, $2}' |\
 		tee -a "${fpipepkgssys}" |\
-		yad --progress --pulsate --auto-close --no-buttons --width=320 --align=center --center --borders=9 --skip-taskbar --title="Querying packages" --text-align="center" --text="One moment please. Querying <i>System</i> packages..."
+		yad --progress --pulsate --auto-close --no-buttons --width=320 --align="center" --center --borders=9 --skip-taskbar --title="Querying packages" --text-align="center" --text="One moment please. Querying <i>System</i> packages..."
 
 	echo -e '\f' >> "${fpipepkgslcl}"
 	pacman -Qm | awk '{printf "%d\n%s\n%s\n", ++i, $1, $2}' |\
 		tee -a "${fpipepkgslcl}" |\
-		yad --progress --pulsate --auto-close --no-buttons --width=320 --align=center --center --borders=9 --skip-taskbar --title="Querying packages" --text-align="center" --text="One moment please. Querying <i>Local/AUR</i> packages..."
+		yad --progress --pulsate --auto-close --no-buttons --width=320 --align="center" --center --borders=9 --skip-taskbar --title="Querying packages" --text-align="center" --text="One moment please. Querying <i>Local/AUR</i> packages..."
 	return
 }
 export -f doscan4pkgs
@@ -218,13 +220,13 @@ echo 'openedFormPIDs=()' > ${frunningPIDs}
 
 yad --plug="${fkey}" --tabnum=1 --list --grid-lines="hor" \
     --dclick-action='bash -c "doaction pacman %s %s %s"' \
-    --text "List of <i>System</i> packages:" \
+    --text="List of <i>System</i> packages:" \
     --search-column=2 --expand-column=2 --focus-field=1 \
     --column='No:':num --column='Package Name' --column='Package Version' <&3 &>/dev/null &
 
 yad --plug="${fkey}" --tabnum=2 --list --grid-lines="hor" \
     --dclick-action='bash -c "doaction yaourt %s %s %s"' \
-    --text "List of <i>Local/AUR</i> packages:" \
+    --text="List of <i>Local/AUR</i> packages:" \
     --search-column=2 --expand-column=2 --focus-field=1 \
     --column='No:':num --column='Package Name' --column='Package Version' <&4 &>/dev/null &
 
@@ -249,7 +251,7 @@ _trapfunc_() {
 	source ${frunningPIDs}
 	runningPIDs=${openedFormPIDs[@]}
 	[[ "${runningPIDs}" ]] && {
-		kill -s USR2 ${runningPIDs[@]}
+		kill -s 15 ${runningPIDs[@]}
 	#	[[ "${#runningPIDs[@]}" -ge 1 ]] && eval "kill -15 ${runningPIDs[@]}"
 		sleep 5
 	}
@@ -258,7 +260,5 @@ _trapfunc_() {
 trap '_trapfunc_' EXIT
 
 # -----------------------------------------------------------------------------|
-
-
 
 exit $?
