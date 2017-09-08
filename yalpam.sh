@@ -9,7 +9,8 @@
 #
 #
 set -e
-#set -x
+#
+set -x
 
 hash paplay 2>/dev/null && [[ -d /usr/share/sounds/freedesktop/stereo/ ]] && {
 	export errorSnd="paplay /usr/share/sounds/freedesktop/stereo/dialog-error.oga"
@@ -18,7 +19,7 @@ hash paplay 2>/dev/null && [[ -d /usr/share/sounds/freedesktop/stereo/ ]] && {
 
 export yalpamTitle="Yet another Arch Linux PAckage Manager"
 export yalpamName="yalpam"
-export yalpamVersion="0.0.290"
+export yalpamVersion="0.1.010"
 
 msg() {
 	$(${errorSnd});
@@ -43,6 +44,7 @@ fi
 
 fkey=$(($RANDOM * $$))
 
+export frealtemp=$(mktemp -u --tmpdir realtemp.XXXXXXXX)
 export frunningPIDs=$(mktemp -u --tmpdir runningPIDs.XXXXXXXX)
 export fpipepkgssys=$(mktemp -u --tmpdir pkgssys.XXXXXXXX)
 export fpipepkgslcl=$(mktemp -u --tmpdir pkgslcl.XXXXXXXX)
@@ -60,6 +62,7 @@ declare -a runningPIDs=()
 # ---[ Action functions ]------------------------------------------------------|
 
 doreinstpkg() {
+	kill -s USR1 $YAD_PID # Close caller window
 	xterm -geometry 152x32 -e "[[ \"$1\" == \"pacman\" ]] && { sudo $1 -Sy --force --noconfirm $2; } || { $1 -Sya --force --noconfirm $2; }"
 	doscan4pkgs
 	return
@@ -67,37 +70,44 @@ doreinstpkg() {
 export -f doreinstpkg
 
 doremovepkg() {
+	kill -s USR1 $YAD_PID # Close caller window
 	xterm -geometry 152x32 -e "sudo $1 -Rcsn $2"
 	doscan4pkgs
 	return
 }
 export -f doremovepkg
 
-function on_click () 
-{ 
-	packagenames="${1}" 
-	kill -s USR1 $YAD_PID 
-} 
-export -f on_click 
+function on_click ()
+{
+	[[ "$1" ]] && {
+		echo -n "$1" > ${frealtemp}
+		kill -s USR1 $YAD_PID
+	} || {
+		$(${infoSnd})
+		echo "2:<Type one or more package names>"
+	}
+}
+export -f on_click
 
 doinstpkg() {
 	local ret=
-	packagenames=
-	export -f on_click 
-	export packagenames
-	until [[ "${packagenames}" ]] || [[ $ret -eq 1 ]]; do
-		yad	--form --width=380 --borders=9 --align="center" --center --fixed --skip-taskbar \
-			--title="Enter package name(s)..." --image="gtk-cdrom" \
-			--text="Input here one or more package names separated\nby <i>blank</i> characters:" \
-			--field=':CE' '' \
-			--button="gtk-cancel":1 --button='gtk-ok:bash -c "on_click axax"' & local pid=$!
+	local packagenames=
+	kill -s USR1 $YAD_PID # Close caller window
+	yad	--form --width=420 --borders=9 --align="center" --center --fixed --skip-taskbar \
+		--title="Enter package name(s)..." \
+		--no-buttons --columns=2 --focus-field=2 \
+		--field="Input here one or more package names separated by <i>blank</i> characters:":lbl '' \
+		--field='' '' \
+		--field="gtk-cancel":fbtn 'bash -c "kill -s USR2 $YAD_PID"' \
+		--field="gtk-ok":fbtn '@bash -c "on_click %2"' & local pid=$!
+		#--button='gtk-cancel:bash -c "kill -s USR2 $YAD_PID"' \
+		#--button='gtk-ok:bash -c "on_click \%1"' & local pid=$!
 
-		sed -i "s/openedFormPIDs=(\(.*\))/openedFormPIDs=(\1 $(echo ${pid}))/" ${frunningPIDs}
-		wait ${pid}
-		local ret=$?
-		[[ -e ${frunningPIDs} ]] && sed -i "s/ $(echo ${pid})//" ${frunningPIDs}
-		[[ ${ret-1} -gt 1 ]] && ret=1
-	done
+	sed -i "s/openedFormPIDs=(\(.*\))/openedFormPIDs=(\1 $(echo ${pid}))/" ${frunningPIDs}
+	wait ${pid}
+	local ret=$?
+	[[ -e ${frunningPIDs} ]] && sed -i "s/ $(echo ${pid})//" ${frunningPIDs}
+	packagenames=$(<${frealtemp})
 
 	fxtermstatus=$(mktemp -u --tmpdir xtermstatus.XXXXXXXX)
 	[[ $ret -eq 0 ]] && [[ "${packagenames}" ]] && {
@@ -110,6 +120,7 @@ doinstpkg() {
 export -f doinstpkg
 
 docrawl() {
+	kill -s USR1 $YAD_PID # Close caller window
 	[[ -x $BROWSER ]] || BROWSER=$(command -v xdg-open 2>/dev/null || command -v gnome-open 2>/dev/null)
 	[[ "$1" == "pacman" ]] && {
 		URL="https://www.archlinux.org/packages/?sort=&q=${2}&maintainer=&flagged=";
@@ -122,19 +133,20 @@ docrawl() {
 export -f docrawl
 
 doexecpkg() {
+	kill -s USR1 $YAD_PID # Close caller window
 	$1 || $(${infoSnd})
 	return
 }
 export -f doexecpkg
 
 domanpage() {
+	kill -s USR1 $YAD_PID # Close caller window
 	man $1 &>/dev/null || $(${infoSnd}) && xterm -geometry 84x40 -e man $1
 	return
 }
 export -f domanpage
 
 doaction() {
-	#export frunningPIDs
 	export -f doscan4pkgs
 
 	export manager=$1
@@ -169,7 +181,7 @@ doabout() {
 		--image="system-software-install" --image-on-top \
 		--text="<span font_size='medium' font_weight='bold'>${yalpamTitle} v${yalpamVersion}</span>\nby John A Ginis (a.k.a. <a href='https://github.com/drxspace'>drxspace</a>)\n<span font_size='small'>build on Summer of 2017</span>" \
 		--field="":lbl '' \
-		--field="...":lbl '' \
+		--field="<b><i>yalpam</i></b> is a helper tool for managing Arch Linux packages, that I started to build having in mind my own <i>special</i> needs. It uses the great tool <a href='https://sourceforge.net/projects/yad-dialog/'>yad</a> which is a personal project of <a href='https://plus.google.com/+VictorAnanjevsky'>Victor Ananjevsky</a>.\nI decided to share my <i>toy</i> with you because you might find it useful too.\n\nHave fun and bring joy into your life,\nJohn":lbl '' \
 		--field="":lbl '' \
 		--buttons-layout="center" \
 		--button=$"Close!gtk-close!Closes the current dialog":0 &>/dev/null & local pid=$!
@@ -220,13 +232,13 @@ echo 'openedFormPIDs=()' > ${frunningPIDs}
 
 yad --plug="${fkey}" --tabnum=1 --list --grid-lines="hor" \
     --dclick-action='bash -c "doaction pacman %s %s %s"' \
-    --text="List of <i>System</i> packages:" \
+    --text="List of <i>System</i> packages:\n<span font_size='small'>Double click on a package for more <i>action</i>.</span>" \
     --search-column=2 --expand-column=2 --focus-field=1 \
     --column='No:':num --column='Package Name' --column='Package Version' <&3 &>/dev/null &
 
 yad --plug="${fkey}" --tabnum=2 --list --grid-lines="hor" \
     --dclick-action='bash -c "doaction yaourt %s %s %s"' \
-    --text="List of <i>Local/AUR</i> packages:" \
+    --text="List of <i>Local/AUR</i> packages:\n<span font_size='small'>Double click on a package for more <i>action</i>.</span>" \
     --search-column=2 --expand-column=2 --focus-field=1 \
     --column='No:':num --column='Package Name' --column='Package Version' <&4 &>/dev/null &
 
@@ -255,7 +267,7 @@ _trapfunc_() {
 	#	[[ "${#runningPIDs[@]}" -ge 1 ]] && eval "kill -15 ${runningPIDs[@]}"
 		sleep 5
 	}
-	rm -f ${fpipepkgssys} ${fpipepkgslcl} ${frunningPIDs}
+	rm -f ${fpipepkgssys} ${fpipepkgslcl} ${frunningPIDs} ${frealtemp}
 }
 trap '_trapfunc_' EXIT
 
