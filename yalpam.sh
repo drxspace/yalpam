@@ -12,14 +12,15 @@ set -e
 #
 set -x
 
+export yalpamVersion="0.1.020"
+
+export yalpamTitle="Yet another Arch Linux PAckage Manager"
+export yalpamName="yalpam"
+
 hash paplay 2>/dev/null && [[ -d /usr/share/sounds/freedesktop/stereo/ ]] && {
 	export errorSnd="paplay /usr/share/sounds/freedesktop/stereo/dialog-error.oga"
 	export infoSnd="paplay /usr/share/sounds/freedesktop/stereo/dialog-information.oga"
 }
-
-export yalpamTitle="Yet another Arch Linux PAckage Manager"
-export yalpamName="yalpam"
-export yalpamVersion="0.1.010"
 
 msg() {
 	$(${errorSnd});
@@ -31,6 +32,19 @@ msg() {
 		exit $(($3 + 5));
 	fi
 }
+
+# -----------------------------------------------------------------------------]
+__CNKDISTRO__=$(sed -n '/^ID=/s/ID=//p' /etc/*release 2>/dev/null)
+
+# for ArchLinux distros only
+# you can type yours below
+__CNKARCHES__="arch|antergos|manjaro|apricity"
+
+DIR="$(dirname "$0")"
+if [[ ! ${__CNKDISTRO__} =~ ${__CNKARCHES__} ]]; then
+	msg "$__CNKDISTRO__" "for ArchLinux distros only." 8
+fi
+# -----------------------------------------------------------------------------]
 
 # Prerequisites
 # Check to see if all needed tools are present
@@ -181,7 +195,7 @@ doabout() {
 		--image="system-software-install" --image-on-top \
 		--text="<span font_size='medium' font_weight='bold'>${yalpamTitle} v${yalpamVersion}</span>\nby John A Ginis (a.k.a. <a href='https://github.com/drxspace'>drxspace</a>)\n<span font_size='small'>build on Summer of 2017</span>" \
 		--field="":lbl '' \
-		--field="<b><i>yalpam</i></b> is a helper tool for managing Arch Linux packages, that I started to build having in mind my own <i>special</i> needs. It uses the great tool <a href='https://sourceforge.net/projects/yad-dialog/'>yad</a> which is a personal project of <a href='https://plus.google.com/+VictorAnanjevsky'>Victor Ananjevsky</a>.\nI decided to share my <i>toy</i> with you because you might find it useful too.\n\nHave fun and bring joy into your life,\nJohn":lbl '' \
+		--field="<b><i>yalpam</i></b> is a helper tool for managing Arch Linux packages, that I started to build in order to cope with my own personal <i>special</i> needs.\nIt uses the great tool <a href='https://sourceforge.net/projects/yad-dialog/'>yad</a> which is a personal project of <a href='https://plus.google.com/+VictorAnanjevsky'>Victor Ananjevsky</a>.\n\nI decided to share my <i>joy</i> with you because you may find it useful too.\n\nHave fun and bring joy into your life,\nJohn":lbl '' \
 		--field="":lbl '' \
 		--buttons-layout="center" \
 		--button=$"Close!gtk-close!Closes the current dialog":0 &>/dev/null & local pid=$!
@@ -247,7 +261,7 @@ yad --key="${fkey}" --notebook --width=480 --height=640 \
     --window-icon="system-software-install" --title="${yalpamTitle} v${yalpamVersion}" \
     --image="system-software-install" --image-on-top \
     --text="<span font_size='medium' font_weight='bold'>View Lists of Installed Packages</span>\n\
-These are packages from all enabled repositories except for <i>base</i> repository. Also, you\'ll find packages that are locally installed such as <i>AUR</i> packages." \
+These are <i><b>only</b> the explicitly installed</i> packages from all enabled repositories except for <i>base</i> repository. Also, you\'ll find packages that are locally installed such as <i>AUR</i> packages." \
     --tab=" <i>System</i> packages category" --tab=" <i>Local/AUR</i> packages category" \
     --button="<span color='#0066ff'>List/Update</span>!system-search!Scans databases for installed packages:bash -c 'doscan4pkgs'" \
     --button="Save/Backup!gtk-save!Saves package lists to disk for later use:bash -c 'dosavepkglists'" \
