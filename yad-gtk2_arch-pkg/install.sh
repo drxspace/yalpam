@@ -10,6 +10,6 @@
 
 makepkg -Csrcfi --noconfirm
 
-rm -rfv yad-*.tar.xz
+rm -rfv yad-*.tar*
 
 exit

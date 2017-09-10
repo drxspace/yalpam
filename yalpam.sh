@@ -12,7 +12,7 @@ set -e
 #
 set -x
 
-export yalpamVersion="0.1.020"
+export yalpamVersion="0.2.025"
 
 export yalpamTitle="Yet another Arch Linux PAckage Manager"
 export yalpamName="yalpam"
@@ -54,6 +54,8 @@ elif ! hash yaourt 2>/dev/null; then
 	msg "yaourt" "command not found." 20
 elif [ -z "$(yad --version | grep 'GTK+ 2')" ]; then
 	msg "yad" "command uses an unsupported GTK+ platform version." 30
+elif ! hash xterm  2>/dev/null; then
+	msg "xterm" "command not found." 40
 fi
 
 fkey=$(($RANDOM * $$))
@@ -73,6 +75,20 @@ declare -a runningPIDs=()
 # --close-on-unfocus
 # declare/local -x
 
+# ---[ Task functions ]------------------------------------------------------|
+
+dodailytasks() {
+	local args
+	[[ "$2" = "TRUE" ]] && args=$args" -m" 
+	[[ "$3" = "TRUE" ]] && args=$args" -u" 
+	[[ "$4" = "TRUE" ]] && args=$args" -p" 
+	[[ "$5" = "TRUE" ]] && args=$args" -o" 
+	[[ "$6" = "TRUE" ]] && args=$args" -r" 
+	xterm -geometry 152x32 -e "yup $args" && doscan4pkgs
+	return
+}
+export -f dodailytasks
+
 # ---[ Action functions ]------------------------------------------------------|
 
 doreinstpkg() {
@@ -85,8 +101,7 @@ export -f doreinstpkg
 
 doremovepkg() {
 	kill -s USR1 $YAD_PID # Close caller window
-	xterm -geometry 152x32 -e "sudo $1 -Rcsn $2"
-	doscan4pkgs
+	xterm -geometry 152x32 -e "sudo $1 -Rcsn $2" && doscan4pkgs
 	return
 }
 export -f doremovepkg
@@ -213,8 +228,8 @@ dosavepkglists() {
 	if [ "${dirname}" ]; then
 		pacman -Qqe |\
 			grep -vx "$(pacman -Qqg base)" |\
-			grep -vx "$(pacman -Qqm)" > "${dirname}"/pkgsSYSTEM.txt
-		pacman -Qqm > "${dirname}"/pkgsLOCAL.txt
+			grep -vx "$(pacman -Qqm)" > "${dirname}"/pkgsSYSTEM-$(date -u +"%g%m%d").txt
+		pacman -Qqm > "${dirname}"/pkgsLOCAL-$(date -u +"%g%m%d").txt
 	fi
 	return
 }
@@ -256,13 +271,25 @@ yad --plug="${fkey}" --tabnum=2 --list --grid-lines="hor" \
     --search-column=2 --expand-column=2 --focus-field=1 \
     --column='No:':num --column='Package Name' --column='Package Version' <&4 &>/dev/null &
 
+yad --plug="${fkey}" --tabnum=3 --form \
+    --field="Refresh pacman databases:chk" 'TRUE' \
+    --field="Retrieve and Filter a list of the latest Manjaro-Arch Linux mirrors:chk" 'FALSE' \
+    --field="Update packages:chk" 'FALSE' \
+    --field="Clean ALL files from cache, unused and sync repositories databases:chk" 'FALSE' \
+    --field="Optimize pacman databases:chk" 'FALSE' \
+    --field="Refresh pacman GnuPG keys:chk" 'FALSE' \
+    --field="GO!gtk-execute:fbtn" 'bash -c "dodailytasks %1 %2 %3 %4 %5 %6"' \
+    --focus-field=3 &>/dev/null &
+
 yad --key="${fkey}" --notebook --width=480 --height=640 \
     --borders=9 --tab-borders=3 --active-tab=1 --focus-field=1 \
     --window-icon="system-software-install" --title="${yalpamTitle} v${yalpamVersion}" \
     --image="system-software-install" --image-on-top \
     --text="<span font_size='medium' font_weight='bold'>View Lists of Installed Packages</span>\n\
 These are <i><b>only</b> the explicitly installed</i> packages from all enabled repositories except for <i>base</i> repository. Also, you\'ll find packages that are locally installed such as <i>AUR</i> packages." \
-    --tab=" <i>System</i> packages category" --tab=" <i>Local/AUR</i> packages category" \
+    --tab=" <i>System</i> packages category" \
+    --tab=" <i>Local/AUR</i> packages category" \
+    --tab=" Other tasks" \
     --button="<span color='#0066ff'>List/Update</span>!system-search!Scans databases for installed packages:bash -c 'doscan4pkgs'" \
     --button="Save/Backup!gtk-save!Saves package lists to disk for later use:bash -c 'dosavepkglists'" \
     --button="gtk-about:bash -c 'doabout'" \
