@@ -12,7 +12,7 @@ set -e
 #
 set -x
 
-export yalpamVersion="0.2.025"
+export yalpamVersion="0.2.040"
 
 export yalpamTitle="Yet another Arch Linux PAckage Manager"
 export yalpamName="yalpam"
@@ -79,12 +79,14 @@ declare -a runningPIDs=()
 
 dodailytasks() {
 	local args
+	echo "7:@disable@"
 	[[ "$2" = "TRUE" ]] && args=$args" -m" 
 	[[ "$3" = "TRUE" ]] && args=$args" -u" 
 	[[ "$4" = "TRUE" ]] && args=$args" -p" 
 	[[ "$5" = "TRUE" ]] && args=$args" -o" 
 	[[ "$6" = "TRUE" ]] && args=$args" -r" 
 	xterm -geometry 152x32 -e "yup $args" && doscan4pkgs
+	echo '7:@bash -c "dodailytasks %1 %2 %3 %4 %5 %6"'
 	return
 }
 export -f dodailytasks
@@ -278,8 +280,7 @@ yad --plug="${fkey}" --tabnum=3 --form \
     --field="Clean ALL files from cache, unused and sync repositories databases:chk" 'FALSE' \
     --field="Optimize pacman databases:chk" 'FALSE' \
     --field="Refresh pacman GnuPG keys:chk" 'FALSE' \
-    --field="GO!gtk-execute:fbtn" 'bash -c "dodailytasks %1 %2 %3 %4 %5 %6"' \
-    --focus-field=3 &>/dev/null &
+    --field="Let's Go!gtk-execute:fbtn" '@bash -c "dodailytasks %1 %2 %3 %4 %5 %6"' &>/dev/null &
 
 yad --key="${fkey}" --notebook --width=480 --height=640 \
     --borders=9 --tab-borders=3 --active-tab=1 --focus-field=1 \
