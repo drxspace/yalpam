@@ -12,7 +12,7 @@ set -e
 #
 set -x
 
-export yalpamVersion="0.2.040"
+export yalpamVersion="0.2.090"
 
 export yalpamTitle="Yet another Arch Linux PAckage Manager"
 export yalpamName="yalpam"
@@ -183,7 +183,7 @@ doaction() {
 	export manager=$1
 	export package=$3
 
-	yad	--form --width=340 --borders=3 --align="center" --fixed \
+	yad	--form --width=400 --borders=3 --align="center" --fixed \
 		--skip-taskbar --title="Choose action:" \
 		--image="dialog-information" --image-on-top \
 		--text="Please, choose your desired action from the list below by clicking on its elements." \
@@ -207,12 +207,12 @@ export -f doaction
 # ---[ Buttons functionality ]-------------------------------------------------|
 
 doabout() {
-	yad	--form --width=480 --borders=9 --align="center" --fixed \
+	yad	--form --width=400 --borders=9 --align="center" --fixed \
 		--skip-taskbar --title="About ${yalpamTitle}" \
 		--image="system-software-install" --image-on-top \
 		--text="<span font_size='medium' font_weight='bold'>${yalpamTitle} v${yalpamVersion}</span>\nby John A Ginis (a.k.a. <a href='https://github.com/drxspace'>drxspace</a>)\n<span font_size='small'>build on Summer of 2017</span>" \
 		--field="":lbl '' \
-		--field="<b><i>yalpam</i></b> is a helper tool for managing Arch Linux packages, that I started to build in order to cope with my own personal <i>special</i> needs.\nIt uses the great tool <a href='https://sourceforge.net/projects/yad-dialog/'>yad</a> which is a personal project of <a href='https://plus.google.com/+VictorAnanjevsky'>Victor Ananjevsky</a>.\n\nI decided to share my <i>joy</i> with you because you may find it useful too.\n\nHave fun and bring joy into your life,\nJohn":lbl '' \
+		--field="<b><i>yalpam</i></b> is a helper tool for managing Arch Linux packages, that I started to build in order to cope with my own personal <i>special</i> needs.\nIt uses the great tool <a href='https://sourceforge.net/projects/yad-dialog/'>yad</a> which is a personal project of <a href='https://plus.google.com/+VictorAnanjevsky'>Victor Ananjevsky</a>.\n\nI decided to share my <i>joy</i> with you because you may find it useful too.\n\nHave fun and bring joy into your lifes,\nJohn":lbl '' \
 		--field="":lbl '' \
 		--buttons-layout="center" \
 		--button=$"Close!gtk-close!Closes the current dialog":0 &>/dev/null & local pid=$!
