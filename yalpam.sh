@@ -12,10 +12,19 @@ set -e
 #
 set -x
 
-export yalpamVersion="0.3.002"
+export yalpamVersion="0.3.024"
 
 export yalpamTitle="Yet another Arch Linux PAckage Manager"
 export yalpamName="yalpam"
+
+# Make sure your DISPLAY and XAUTHORITY variables are set in the environment the script is running in
+Encoding=UTF-8
+LANG=en_US.UTF-8
+[[ -z "$DISPLAY" ]] && {
+	display=`/bin/ps -Afl | /bin/grep Xorg | /bin/grep -v grep | /usr/bin/awk '{print $16 ".0"}'`
+	export DISPLAY=$display
+}
+[[ -z "$XAUTHORITY" ]] && [[ -e "$HOME/.Xauthority" ]] && export XAUTHORITY="$HOME/.Xauthority";
 
 hash paplay 2>/dev/null && [[ -d /usr/share/sounds/freedesktop/stereo/ ]] && {
 	export errorSnd="paplay /usr/share/sounds/freedesktop/stereo/dialog-error.oga"

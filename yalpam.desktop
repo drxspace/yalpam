@@ -1,7 +1,7 @@
 [Desktop Entry]
 Encoding=UTF-8
 Type=Application
-Name=yalpam
+Name=Package Manager
 GenericName=Package Manager
 Comment=Yet another Arch Linux PAckage Manager
 Exec=yalpam
