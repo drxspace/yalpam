@@ -12,7 +12,7 @@ set -e
 #
 set -x
 
-export yalpamVersion="0.3.000"
+export yalpamVersion="0.3.002"
 
 export yalpamTitle="Yet another Arch Linux PAckage Manager"
 export yalpamName="yalpam"
@@ -230,8 +230,8 @@ dosavepkglists() {
 	if [ "${dirname}" ]; then
 		pacman -Qqe |\
 			grep -vx "$(pacman -Qqg base)" |\
-			grep -vx "$(pacman -Qqm)" > "${dirname}"/pkgsSYSTEM-$(date -u +"%g%m%d").txt
-		pacman -Qqm > "${dirname}"/pkgsLOCAL-$(date -u +"%g%m%d").txt
+			grep -vx "$(pacman -Qqm)" > "${dirname}"/$(date -u +"%g%m%d")-SYSTEMpkgs.txt
+		pacman -Qqm > "${dirname}"/$(date -u +"%g%m%d")-LOCALpkgs.txt
 	fi
 	return
 }
