@@ -10,8 +10,6 @@
 #set -e set -x
 #set -x set -e
 
-ScriptVersion="0.9.3"
-
 source "$(dirname "$0")"/libfuncs &>/dev/null || {
 	echo "Missing file: libfuncs";
 	exit 1;

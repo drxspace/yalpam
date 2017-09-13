@@ -11,6 +11,7 @@
 #set -x
 
 ScriptName="$(basename $0)"
+ScriptVersion="0.8.40"
 
 msg() {
 	local msgStartOptions=""

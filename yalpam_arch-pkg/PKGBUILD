@@ -15,9 +15,6 @@ depends=(
 	'yaourt'
 	'reflector'
 )
-makedepends=(
-	'gendesk'
-)
 source=("git+${url}.git")
 sha1sums=('SKIP')
 options=('strip' '!debug')
@@ -37,6 +34,7 @@ package() {
 	cp "${srcdir}/${_pkgname}/"LICENSE "${pkgdir}/usr/lib/${_pkgname}/"
 
 	# Place desktop entry
+	install -d "${pkgdir}/usr/share/applications"
 	desktop-file-install -m 644 --dir "${pkgdir}/usr/share/applications/" "${srcdir}/${_pkgname}/${_pkgname}.desktop"
 
 	# Symlink main binaries

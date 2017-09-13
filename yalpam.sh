@@ -12,7 +12,7 @@ set -e
 #
 set -x
 
-export yalpamVersion="0.3.050"
+export yalpamVersion="0.3.099"
 
 export yalpamTitle="Yet another Arch Linux PAckage Manager"
 export yalpamName="yalpam"
@@ -35,10 +35,10 @@ msg() {
 	$(${errorSnd});
 	if ! hash notify-send 2>/dev/null; then
 		echo -e ":: \e[1m$1\e[0m $2" 1>&2;
-		exit $3;
+		[ "x$3" == "x" ] || exit $3;
 	else
 		notify-send "${yalpamTitle}" "<b>$1</b> $2" -i face-worried;
-		exit $(($3 + 5));
+		[ "x$3" == "x" ] || exit $(($3 + 5));
 	fi
 }
 
@@ -61,10 +61,10 @@ if ! hash yad 2>/dev/null; then
 	msg "yad" "command not found." 10
 elif ! hash yaourt 2>/dev/null; then
 	msg "yaourt" "command not found." 20
-elif [ -z "$(yad --version | grep 'GTK+ 2')" ]; then
-	msg "yad" "command uses an unsupported GTK+ platform version." 30
+elif [[ -z "$(yad --version | grep 'GTK+ 2')" ]]; then
+	msg "yad" "command uses an unsupported GTK+ platform version.\n<i>Expect GUI abnormalities.</i>"
 elif ! hash xterm  2>/dev/null; then
-	msg "xterm" "command not found." 40
+	msg "xterm" "command not found." 30
 fi
 
 fkey=$(($RANDOM * $$))
@@ -91,11 +91,11 @@ declare -a runningPIDs=()
 dodailytasks() {
 	local args
 	echo "7:@disable@"
-	[[ "$2" = "TRUE" ]] && args=$args" -m" 
-	[[ "$3" = "TRUE" ]] && args=$args" -u" 
-	[[ "$4" = "TRUE" ]] && args=$args" -p" 
-	[[ "$5" = "TRUE" ]] && args=$args" -o" 
-	[[ "$6" = "TRUE" ]] && args=$args" -r" 
+	[[ "$2" = "TRUE" ]] && args=$args" -m"
+	[[ "$3" = "TRUE" ]] && args=$args" -u"
+	[[ "$4" = "TRUE" ]] && args=$args" -p"
+	[[ "$5" = "TRUE" ]] && args=$args" -o"
+	[[ "$6" = "TRUE" ]] && args=$args" -r"
 	xterm ${xtermOptions} -e "yup $args" && doscan4pkgs
 	echo '7:@bash -c "dodailytasks %1 %2 %3 %4 %5 %6"'
 	return
@@ -238,7 +238,7 @@ dosavepkglists() {
 	local dirname=$(yad --file --directory --filename="${XDG_DOWNLOAD_DIR:-$HOME/Downloads}/" \
 			    --width=640 --height=480 --skip-taskbar \
 			    --title="Choose a directory to save the files...")
-	if [ "${dirname}" ]; then
+	if [[ "${dirname}" ]]; then
 		pacman -Qqe |\
 			grep -vx "$(pacman -Qqg base)" |\
 			grep -vx "$(pacman -Qqm)" > "${dirname}"/$(date -u +"%g%m%d")-SYSTEMpkgs.txt
