@@ -12,7 +12,7 @@ set -e
 #
 set -x
 
-export yalpamVersion="0.3.099"
+export yalpamVersion="0.4.001"
 
 export yalpamTitle="Yet another Arch Linux PAckage Manager"
 export yalpamName="yalpam"
@@ -202,9 +202,9 @@ doaction() {
 		--field="<span color='#006699'>Uninstall/Remove selected package</span>!gtk-delete":btn 'bash -c "doremovepkg $manager $package"' \
 		--field="<span color='#006699'>Install a package of the selected category</span>!gtk-go-down":btn 'bash -c "doinstpkg $manager"' \
 		--field="":lbl '' \
-		--field="<span color='#006699'>Browse the package on the web</span>!gtk-home":btn 'bash -c "docrawl $manager $package"' \
-		--field="":lbl '' \
 		--field="<span color='#006699'>Try to <i>execute</i> the selected package</span>!gtk-execute":btn 'bash -c "doexecpkg $package"' \
+		--field="":lbl '' \
+		--field="<span color='#006699'>Browse the package on the web</span>!gtk-home":btn 'bash -c "docrawl $manager $package"' \
 		--field="<span color='#006699'>Try to view the <i>man page</i> of the selected package</span>!gtk-help":btn 'bash -c "domanpage $package"' \
 		--buttons-layout="center" \
 		--button=$"Close!gtk-close!Closes the current dialog":0 &>/dev/null & local pid=$!
@@ -218,7 +218,7 @@ export -f doaction
 # ---[ Buttons functionality ]-------------------------------------------------|
 
 doabout() {
-	yad	--form --width=400 --borders=9 --align="center" --fixed \
+	yad	--form --width=460 --borders=9 --align="center" --fixed \
 		--skip-taskbar --title="About ${yalpamTitle}" \
 		--image="system-software-install" --image-on-top \
 		--text="<span font_size='medium' font_weight='bold'>${yalpamTitle} v${yalpamVersion}</span>\nby John A Ginis (a.k.a. <a href='https://github.com/drxspace'>drxspace</a>)\n<span font_size='small'>build on Summer of 2017</span>" \
