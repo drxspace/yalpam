@@ -12,7 +12,7 @@ set -e
 #
 set -x
 
-export yalpamVersion="0.4.001"
+export yalpamVersion="0.4.101"
 
 export yalpamTitle="Yet another Arch Linux PAckage Manager"
 export yalpamName="yalpam"
@@ -78,6 +78,7 @@ mkfifo "${fpipepkgssys}" "${fpipepkgslcl}"
 export GDK_BACKEND=x11			# https://groups.google.com/d/msg/yad-common/Jnt-zCeCVg4/Gwzx-O-2BQAJ
 
 export xtermOptions="-geometry 128x24 -fa 'Monospace' -fs 9 -bg CadetBlue"
+export IAdmin="pkexec env DISPLAY=$DISPLAY XAUTHORITY=$XAUTHORITY"
 
 declare -a runningPIDs=()
 
@@ -96,7 +97,7 @@ dodailytasks() {
 	[[ "$4" = "TRUE" ]] && args=$args" -p"
 	[[ "$5" = "TRUE" ]] && args=$args" -o"
 	[[ "$6" = "TRUE" ]] && args=$args" -r"
-	xterm ${xtermOptions} -e "yup $args" && doscan4pkgs
+	xterm ${xtermOptions} -e "$IAdmin yup $args" && doscan4pkgs
 	echo '7:@bash -c "dodailytasks %1 %2 %3 %4 %5 %6"'
 	return
 }
@@ -106,7 +107,7 @@ export -f dodailytasks
 
 doreinstpkg() {
 	kill -s USR1 $YAD_PID # Close caller window
-	xterm ${xtermOptions} -e "[[ \"$1\" == \"pacman\" ]] && { sudo $1 -Sy --force --noconfirm $2; } || { $1 -Sya --force --noconfirm $2; }"
+	xterm ${xtermOptions} -e "[[ \"$1\" == \"pacman\" ]] && { $IAdmin $1 -Sy --force --noconfirm $2; } || { $IAdmin $1 -Sya --force --noconfirm $2; }"
 	doscan4pkgs
 	return
 }
@@ -114,7 +115,7 @@ export -f doreinstpkg
 
 doremovepkg() {
 	kill -s USR1 $YAD_PID # Close caller window
-	xterm ${xtermOptions} -e "sudo $1 -Rcsn $2" && doscan4pkgs
+	xterm ${xtermOptions} -e "$IAdmin $1 -Rcsn $2" && doscan4pkgs
 	return
 }
 export -f doremovepkg
@@ -153,7 +154,7 @@ doinstpkg() {
 
 	fxtermstatus=$(mktemp -u --tmpdir xtermstatus.XXXXXXXX)
 	[[ $ret -eq 0 ]] && [[ "${packagenames}" ]] && {
-		xterm ${xtermOptions} -e "[[ \"$1\" == \"pacman\" ]] && { sudo $1 -Sy ${packagenames}; } || { $1 -Sya ${packagenames}; }; echo $? > ${fxtermstatus}"
+		xterm ${xtermOptions} -e "[[ \"$1\" == \"pacman\" ]] && { $IAdmin $1 -Sy ${packagenames}; } || { $IAdmin $1 -Sya ${packagenames}; }; echo $? > ${fxtermstatus}"
 		[[ $(<$fxtermstatus) -eq 0 ]] && doscan4pkgs || $(${infoSnd})
 	}
 	rm -f ${fxtermstatus}
@@ -206,6 +207,7 @@ doaction() {
 		--field="":lbl '' \
 		--field="<span color='#006699'>Browse the package on the web</span>!gtk-home":btn 'bash -c "docrawl $manager $package"' \
 		--field="<span color='#006699'>Try to view the <i>man page</i> of the selected package</span>!gtk-help":btn 'bash -c "domanpage $package"' \
+		--field="":lbl '' \
 		--buttons-layout="center" \
 		--button=$"Close!gtk-close!Closes the current dialog":0 &>/dev/null & local pid=$!
 	sed -i "s/openedFormPIDs=(\(.*\))/openedFormPIDs=(\1 $(echo ${pid}))/" ${frunningPIDs}
@@ -218,7 +220,7 @@ export -f doaction
 # ---[ Buttons functionality ]-------------------------------------------------|
 
 doabout() {
-	yad	--form --width=460 --borders=9 --align="center" --fixed \
+	yad	--form --width=460 --borders=9 --align="center" --text-align="fill"--fixed \
 		--skip-taskbar --title="About ${yalpamTitle}" \
 		--image="system-software-install" --image-on-top \
 		--text="<span font_size='medium' font_weight='bold'>${yalpamTitle} v${yalpamVersion}</span>\nby John A Ginis (a.k.a. <a href='https://github.com/drxspace'>drxspace</a>)\n<span font_size='small'>build on Summer of 2017</span>" \
