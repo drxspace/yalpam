@@ -12,7 +12,7 @@ set -e
 #
 set -x
 
-export yalpamVersion="0.4.101"
+export yalpamVersion="0.4.718"
 
 export yalpamTitle="Yet another Arch Linux PAckage Manager"
 export yalpamName="yalpam"
@@ -82,12 +82,7 @@ export IAdmin="pkexec env DISPLAY=$DISPLAY XAUTHORITY=$XAUTHORITY"
 
 declare -a runningPIDs=()
 
-#export V=true				# V for verbose
-#	${V} && { echo "$1 $2 $3 $4" 1>&2; }
-# --close-on-unfocus
-# declare/local -x
-
-# ---[ Task functions ]------------------------------------------------------|
+# ---[ Task functions ]--------------------------------------------------------|
 
 dodailytasks() {
 	local args
@@ -122,7 +117,7 @@ export -f doremovepkg
 
 function on_click ()
 {
-	[[ "$1" ]] && {
+	[[ "$1" ]] && [[ "$1" != "<Type one or more package names>" ]] && {
 		echo -n "$1" > ${frealtemp}
 		kill -s USR1 $YAD_PID
 	} || {
@@ -136,15 +131,13 @@ doinstpkg() {
 	local ret=
 	local packagenames=
 	kill -s USR1 $YAD_PID # Close caller window
-	yad	--form --width=420 --borders=9 --align="center" --center --fixed --skip-taskbar \
-		--title="Enter package name(s)..." \
+	yad	--form --width=460 --borders=9 --align="center" --center --fixed --skip-taskbar \
+		--geometry=+200+200 --image="emblem-package" --title="Enter package name(s)..." \
 		--no-buttons --columns=2 --focus-field=2 \
 		--field="Input here one or more package names separated by <i>blank</i> characters:":lbl '' \
 		--field='' '' \
 		--field="gtk-cancel":fbtn 'bash -c "kill -s USR2 $YAD_PID"' \
-		--field="gtk-ok":fbtn '@bash -c "on_click %2"' & local pid=$!
-		#--button='gtk-cancel:bash -c "kill -s USR2 $YAD_PID"' \
-		#--button='gtk-ok:bash -c "on_click \%1"' & local pid=$!
+		--field="gtk-ok":fbtn '@bash -c "on_click %2"' &>/dev/null & local pid=$!
 
 	sed -i "s/openedFormPIDs=(\(.*\))/openedFormPIDs=(\1 $(echo ${pid}))/" ${frunningPIDs}
 	wait ${pid}
@@ -154,7 +147,7 @@ doinstpkg() {
 
 	fxtermstatus=$(mktemp -u --tmpdir xtermstatus.XXXXXXXX)
 	[[ $ret -eq 0 ]] && [[ "${packagenames}" ]] && {
-		xterm ${xtermOptions} -e "[[ \"$1\" == \"pacman\" ]] && { $IAdmin $1 -Sy ${packagenames}; } || { $IAdmin $1 -Sya ${packagenames}; }; echo $? > ${fxtermstatus}"
+		xterm ${xtermOptions} -e "[[ \"$1\" == \"pacman\" ]] && { $IAdmin $1 -S ${packagenames}; } || { $IAdmin $1 -Sa ${packagenames}; };" # echo $?" >${fxtermstatus}
 		[[ $(<$fxtermstatus) -eq 0 ]] && doscan4pkgs || $(${infoSnd})
 	}
 	rm -f ${fxtermstatus}
@@ -198,15 +191,15 @@ doaction() {
 	yad	--form --width=400 --borders=3 --align="center" --fixed \
 		--skip-taskbar --title="Choose action:" \
 		--image="dialog-information" --image-on-top \
-		--text="Please, choose your desired action from the list below by clicking on its elements." \
-		--field="<span color='#006699'>Reinstall/Update selected package</span>!gtk-refresh":btn 'bash -c "doreinstpkg $manager $package"' \
-		--field="<span color='#006699'>Uninstall/Remove selected package</span>!gtk-delete":btn 'bash -c "doremovepkg $manager $package"' \
-		--field="<span color='#006699'>Install a package of the selected category</span>!gtk-go-down":btn 'bash -c "doinstpkg $manager"' \
+		--text="Please, choose your desired action from the list below by clicking one of its elements." \
+		--field="<span color='#006699'>_Reinstall/Update selected package</span>!gtk-refresh":btn 'bash -c "doreinstpkg $manager $package"' \
+		--field="<span color='#006699'>_Uninstall/Remove selected package</span>!gtk-delete":btn 'bash -c "doremovepkg $manager $package"' \
+		--field="<span color='#006699'>_Install a package of the selected category</span>!gtk-go-down":btn 'bash -c "doinstpkg $manager"' \
 		--field="":lbl '' \
-		--field="<span color='#006699'>Try to <i>execute</i> the selected package</span>!gtk-execute":btn 'bash -c "doexecpkg $package"' \
+		--field="<span color='#006699'>Try to <i>_execute</i> the selected package</span>!gtk-execute":btn 'bash -c "doexecpkg $package"' \
 		--field="":lbl '' \
-		--field="<span color='#006699'>Browse the package on the web</span>!gtk-home":btn 'bash -c "docrawl $manager $package"' \
-		--field="<span color='#006699'>Try to view the <i>man page</i> of the selected package</span>!gtk-help":btn 'bash -c "domanpage $package"' \
+		--field="<span color='#006699'>_Browse the package on the web</span>!gtk-home":btn 'bash -c "docrawl $manager $package"' \
+		--field="<span color='#006699'>Try to view the <i>_man page</i> of the selected package</span>!gtk-help":btn 'bash -c "domanpage $package"' \
 		--field="":lbl '' \
 		--buttons-layout="center" \
 		--button=$"Close!gtk-close!Closes the current dialog":0 &>/dev/null & local pid=$!
@@ -220,8 +213,8 @@ export -f doaction
 # ---[ Buttons functionality ]-------------------------------------------------|
 
 doabout() {
-	yad	--form --width=460 --borders=9 --align="center" --text-align="fill"--fixed \
-		--skip-taskbar --title="About ${yalpamTitle}" \
+	yad	--form --width=460 --borders=9 --align="center" --text-align="fill" --fixed \
+		--skip-taskbar --title="About ${yalpamTitle}" --justify="center" \
 		--image="system-software-install" --image-on-top \
 		--text="<span font_size='medium' font_weight='bold'>${yalpamTitle} v${yalpamVersion}</span>\nby John A Ginis (a.k.a. <a href='https://github.com/drxspace'>drxspace</a>)\n<span font_size='small'>build on Summer of 2017</span>" \
 		--field="":lbl '' \
@@ -293,7 +286,7 @@ yad --plug="${fkey}" --tabnum=3 --form \
     --field="Clean ALL files from cache, unused and sync repositories databases:chk" 'FALSE' \
     --field="Optimize pacman databases:chk" 'FALSE' \
     --field="Refresh pacman GnuPG keys:chk" 'FALSE' \
-    --field="Let's Go!gtk-execute:fbtn" '@bash -c "dodailytasks %1 %2 %3 %4 %5 %6"' &>/dev/null &
+    --field="Let's Do the Job!/usr/share/icons/Adwaita/32x32/actions/system-run.png:fbtn" '@bash -c "dodailytasks %1 %2 %3 %4 %5 %6"' &>/dev/null &
 
 yad --key="${fkey}" --notebook --width=480 --height=640 \
     --borders=9 --tab-borders=3 --active-tab=1 --focus-field=1 \
@@ -304,8 +297,8 @@ These are <i><b>only</b> the explicitly installed</i> packages from all enabled 
     --tab=" <i>System</i> packages category" \
     --tab=" <i>Local/AUR</i> packages category" \
     --tab=" Other tasks" \
-    --button="<span color='#0066ff'>List/Update</span>!system-search!Scans databases for installed packages:bash -c 'doscan4pkgs'" \
-    --button="Save/Backup!gtk-save!Saves package lists to disk for later use:bash -c 'dosavepkglists'" \
+    --button="<span color='#0066ff'>_List/Update</span>!system-search!Scans databases for installed packages:bash -c 'doscan4pkgs'" \
+    --button="_Save/Backup!gtk-save!Saves packages lists to disk for later use:bash -c 'dosavepkglists'" \
     --button="gtk-about:bash -c 'doabout'" \
     --button="gtk-close":0 &>/dev/null
 
