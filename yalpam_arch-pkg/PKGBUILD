@@ -13,8 +13,7 @@ depends=(
 	'xterm'
 	'yad'
 	'yaourt'
-	'reflector'
-)
+
 source=("git+${url}.git")
 sha1sums=('SKIP')
 options=('strip' '!debug')

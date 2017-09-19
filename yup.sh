@@ -159,6 +159,7 @@ if $RefreshKeys; then
 	[[ $(yaourt  -Ssq apricity-keyring) ]] && { Flavours=${Flavours}" apricity"; NeededPkgs+=("apricity-keyring"); }
 	[[ $(yaourt  -Ssq antergos-keyring) ]] && { Flavours=${Flavours}" antergos"; NeededPkgs+=("antergos-keyring"); }
 	[[ $(yaourt  -Ssq manjaro-keyring) ]] && { Flavours=${Flavours}" manjaro"; NeededPkgs+=("manjaro-keyring"); }
+		[[ $(yaourt  -Ssq manjaro-system) ]] && { NeededPkgs+=("manjaro-system"); }
 
 	msg "~> Reinitiating current user's PGP keys..." 3
 	rm -rfv ${HOME}/.gnupg

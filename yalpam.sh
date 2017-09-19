@@ -12,7 +12,7 @@ set -e
 #
 set -x
 
-export yalpamVersion="0.4.902"
+export yalpamVersion="0.4.912"
 
 export yalpamTitle="Yet another Arch Linux PAckage Manager"
 export yalpamName="yalpam"
@@ -122,7 +122,7 @@ function on_click ()
 		echo -n "$1" > ${frealtemp}
 		kill -s USR1 $YAD_PID
 	} || {
-		$(${infoSnd})
+		$(${errorSnd})
 		echo "2:<Type one or more package names>"
 	}
 }
@@ -149,7 +149,7 @@ doinstpkg() {
 	fxtermstatus=$(mktemp -u --tmpdir xtermstatus.XXXXXXXX)
 	[[ $ret -eq 0 ]] && [[ "${packagenames}" ]] && {
 		xterm ${xtermOptions} -e "[[ \"$1\" == \"pacman\" ]] && { $IAdmin $1 -Sy ${packagenames}; } || { $1 -Sya ${packagenames}; };" # echo $?" >${fxtermstatus}
-		[[ $(<$fxtermstatus) -eq 0 ]] && doscan4pkgs || $(${infoSnd})
+		[[ $(<$fxtermstatus) -eq 0 ]] && doscan4pkgs || $(${errorSnd})
 	}
 	rm -f ${fxtermstatus}
 	return
@@ -171,7 +171,7 @@ export -f docrawl
 
 doexecpkg() {
 	kill -s USR1 $YAD_PID # Close caller window
-	$1 || $(${infoSnd})
+	$1 || $(${errorSnd})
 	return
 }
 export -f doexecpkg
@@ -280,14 +280,15 @@ yad --plug="${fkey}" --tabnum=2 --list --grid-lines="hor" \
     --search-column=2 --expand-column=2 --focus-field=1 \
     --column='No:':num --column='Package Name' --column='Package Version' <&4 &>/dev/null &
 
-yad --plug="${fkey}" --tabnum=3 --form \
+echo -e '\f\n@disabled@' |\
+yad --plug="${fkey}" --tabnum=3 --form --cycle-read --focus-field=2 \
     --field=$"Refresh pacman databases:chk" 'TRUE' \
     --field=$"Retrieve and Filter a list of the latest Manjaro-Arch Linux mirrors:chk" 'FALSE' \
-    --field=$"Update packages:chk" 'FALSE' \
+    --field=$"Update packages:chk" 'TRUE' \
     --field=$"Clean ALL files from cache, unused and sync repositories databases:chk" 'FALSE' \
     --field=$"Optimize pacman databases:chk" 'FALSE' \
     --field=$"Refresh pacman GnuPG keys:chk" 'FALSE' \
-    --field=$"Let's Do the Job!/usr/share/icons/Adwaita/32x32/actions/system-run.png:fbtn" '@bash -c "dodailytasks %1 %2 %3 %4 %5 %6"' &>/dev/null &
+    --field=$"Let's do the job...!/usr/share/icons/Adwaita/24x24/actions/system-run.png:btn" '@bash -c "dodailytasks %1 %2 %3 %4 %5 %6"' &>/dev/null &
 
 yad --key="${fkey}" --notebook --geometry=480x640+200+100 \
     --borders=9 --tab-borders=3 --active-tab=1 --focus-field=1 \
