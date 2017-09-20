@@ -12,7 +12,7 @@ set -e
 #
 set -x
 
-export yalpamVersion="0.4.912"
+export yalpamVersion="0.4.920"
 
 export yalpamTitle="Yet another Arch Linux PAckage Manager"
 export yalpamName="yalpam"
@@ -288,7 +288,7 @@ yad --plug="${fkey}" --tabnum=3 --form --cycle-read --focus-field=2 \
     --field=$"Clean ALL files from cache, unused and sync repositories databases:chk" 'FALSE' \
     --field=$"Optimize pacman databases:chk" 'FALSE' \
     --field=$"Refresh pacman GnuPG keys:chk" 'FALSE' \
-    --field=$"Let's do the job...!/usr/share/icons/Adwaita/24x24/actions/system-run.png:btn" '@bash -c "dodailytasks %1 %2 %3 %4 %5 %6"' &>/dev/null &
+    --field=$"Let's do the job...!/usr/share/icons/Adwaita/24x24/actions/system-run.png:fbtn" '@bash -c "dodailytasks %1 %2 %3 %4 %5 %6"' &>/dev/null &
 
 yad --key="${fkey}" --notebook --geometry=480x640+200+100 \
     --borders=9 --tab-borders=3 --active-tab=1 --focus-field=1 \
