@@ -12,7 +12,7 @@ set -e
 #
 set -x
 
-export yalpamVersion="0.4.930"
+export yalpamVersion="0.5.000"
 
 export yalpamTitle="Yet another Arch Linux PAckage Manager"
 export yalpamName="yalpam"
@@ -85,19 +85,32 @@ declare -a runningPIDs=()
 
 # ---[ Task functions ]--------------------------------------------------------|
 
-dodailytasks() {
+doupdate() {
 	local args
-	echo "7:@disable@"
+	echo "5:@disable@"
 	[[ "$2" = "TRUE" ]] && args=$args" -m"
 	[[ "$3" = "TRUE" ]] && args=$args" -u"
 	[[ "$4" = "TRUE" ]] && args=$args" -p"
-	[[ "$5" = "TRUE" ]] && args=$args" -o"
-	[[ "$6" = "TRUE" ]] && args=$args" -r"
 	xterm ${xtermOptions} -e "yup $args" && doscan4pkgs
-	echo '7:@bash -c "dodailytasks %1 %2 %3 %4 %5 %6"'
+	echo '5:@bash -c "doupdate %1 %2 %3 %4"'
 	return
 }
-export -f dodailytasks
+export -f doupdate
+
+doadvanced() {
+	local argsyup
+	local argssys
+	echo "11:@disable@"
+	[[ "$1" = "TRUE" ]] && argsyup=$argsyup" -o"
+	[[ "$2" = "TRUE" ]] && argsyup=$argsyup" -r"
+	[[ "$argsyup" ]] && xterm ${xtermOptions} -e "yup $argsyup" && doscan4pkgs
+	[[ "$3" = "TRUE" ]] && argssys=$argssys" -m"
+	[[ "$4" = "TRUE" ]] && argssys=$argssys" -g"
+	[[ "$argssys" ]] && xterm ${xtermOptions} -e "update-sys $argssys"
+	echo '11:@bash -c "doadvanced %7 %8 %9 %10"'
+	return
+}
+export -f doadvanced
 
 # ---[ Action functions ]------------------------------------------------------|
 
@@ -286,9 +299,13 @@ yad --plug="${fkey}" --tabnum=3 --form --cycle-read --focus-field=2 \
     --field=$"Retrieve and Filter a list of the latest Manjaro-Arch Linux mirrors:chk" 'FALSE' \
     --field=$"Update packages:chk" 'TRUE' \
     --field=$"Clean ALL files from cache, unused and sync repositories databases:chk" 'FALSE' \
+    --field=$"Refresh, Update, Clean!/usr/share/icons/HighContrast/16x16/apps/system-software-update.png:fbtn" '@bash -c "doupdate %1 %2 %3 %4"' \
+    --field="":lbl '' \
     --field=$"Optimize pacman databases:chk" 'FALSE' \
     --field=$"Refresh pacman GnuPG keys:chk" 'FALSE' \
-    --field=$"Let's do the job...!/usr/share/icons/Adwaita/24x24/actions/system-run.png:fbtn" '@bash -c "dodailytasks %1 %2 %3 %4 %5 %6"' &>/dev/null &
+    --field=$"Create an initial ramdisk environment:chk" 'FALSE' \
+    --field=$"Generate a GRUB configuration file:chk" 'FALSE' \
+    --field=$"Optimize, Refresh, mkinitcpio, grub-mkconfig !/usr/share/icons/Adwaita/16x16/categories/preferences-system.png:fbtn" '@bash -c "doadvanced %7 %8 %9 %10"' &>/dev/null &
 
 yad --key="${fkey}" --notebook --geometry=480x640+200+100 \
     --borders=9 --tab-borders=3 --active-tab=1 --focus-field=1 \
@@ -298,7 +315,7 @@ yad --key="${fkey}" --notebook --geometry=480x640+200+100 \
 These are <i><b>only</b> the explicitly installed</i> packages from all enabled repositories except for <i>base</i> repository. Also, you\'ll find packages that are locally installed such as <i>AUR</i> packages." \
     --tab=" <i>System</i> packages category" \
     --tab=" <i>Local/AUR</i> packages category" \
-    --tab=" Other tasks" \
+    --tab=" Daily/Useful tasks" \
     --button=$"<span color='#0066ff'>_List/Update</span>!system-search!Scans databases for installed packages:bash -c 'doscan4pkgs'" \
     --button=$"_Save/Backup!gtk-save!Saves packages lists to disk for later use:bash -c 'dosavepkglists'" \
     --button="gtk-about:bash -c 'doabout'" \
