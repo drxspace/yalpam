@@ -10,7 +10,7 @@
 #set -e set -x
 #set -x set -e
 
-[[ $EUID -ne 0 ]] && exec $(which sudo) "$0" "$1";
+[[ $EUID -ne 0 ]] && exec "sudo $0 $1";
 
 source "$(dirname "$0")"/libfuncs &>/dev/null || {
 	echo "Missing file: libfuncs";
@@ -24,8 +24,10 @@ source "$(dirname "$0")"/libfuncs &>/dev/null || {
 }
 
 [[ "$1" = "-g" ]] || [[ "$1" = "" ]] || [[ "$1" = "-a" ]] && {
-	msg "Probing disks on the system for other operating systems" 12;
-	os-prober;
+	if hash os-prober &>/dev/null; then
+		msg "Probing disks on the system for other operating systems" 12;
+		os-prober;
+	fi
 	msg "Generating a GRUB configuration file" 10;
 	exec grub-mkconfig -o /boot/grub/grub.cfg;
 }

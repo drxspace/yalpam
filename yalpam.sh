@@ -12,7 +12,7 @@ set -e
 #
 set -x
 
-export yalpamVersion="0.5.000"
+export yalpamVersion="0.5.115"
 
 export yalpamTitle="Yet another Arch Linux PAckage Manager"
 export yalpamName="yalpam"
@@ -75,9 +75,9 @@ export fpipepkgssys=$(mktemp -u --tmpdir pkgssys.XXXXXXXX)
 export fpipepkgslcl=$(mktemp -u --tmpdir pkgslcl.XXXXXXXX)
 mkfifo "${fpipepkgssys}" "${fpipepkgslcl}"
 
-export GDK_BACKEND=x11			# https://groups.google.com/d/msg/yad-common/Jnt-zCeCVg4/Gwzx-O-2BQAJ
+export GDK_BACKEND=x11	# https://groups.google.com/d/msg/yad-common/Jnt-zCeCVg4/Gwzx-O-2BQAJ
 
-export xtermOptions="-geometry 128x24 -fa 'Monospace' -fs 9 -bg CadetBlue"
+export xtermOptions="-geometry 128x24 -fa 'Monospace' -fs 9 -bg RoyalBlue"
 # -rightbar -sb -- export IAdmin="pkexec env DISPLAY=$DISPLAY XAUTHORITY=$XAUTHORITY"
 export IAdmin="sudo"
 
@@ -92,6 +92,8 @@ doupdate() {
 	[[ "$3" = "TRUE" ]] && args=$args" -u"
 	[[ "$4" = "TRUE" ]] && args=$args" -p"
 	xterm ${xtermOptions} -e "yup $args" && doscan4pkgs
+	echo "2:FALSE"
+	echo "4:FALSE"
 	echo '5:@bash -c "doupdate %1 %2 %3 %4"'
 	return
 }
@@ -107,6 +109,10 @@ doadvanced() {
 	[[ "$3" = "TRUE" ]] && argssys=$argssys" -m"
 	[[ "$4" = "TRUE" ]] && argssys=$argssys" -g"
 	[[ "$argssys" ]] && xterm ${xtermOptions} -e "update-sys $argssys"
+	echo "7:FALSE"
+	echo "8:FALSE"
+	echo "9:FALSE"
+	echo "10:FALSE"
 	echo '11:@bash -c "doadvanced %7 %8 %9 %10"'
 	return
 }
@@ -232,7 +238,7 @@ doabout() {
 		--image="system-software-install" --image-on-top \
 		--text=$"<span font_size='medium' font_weight='bold'>${yalpamTitle} v${yalpamVersion}</span>\nby John A Ginis (a.k.a. <a href='https://github.com/drxspace'>drxspace</a>)\n<span font_size='small'>build on Summer of 2017</span>" \
 		--field="":lbl '' \
-		--field=$"<b><i>yalpam</i></b> is a helper tool for managing Arch Linux packages, that I started to build in order to cope with my own personal <i>special</i> needs.\nIt uses the great tool <a href='https://sourceforge.net/projects/yad-dialog/'>yad</a> which is a personal project of <a href='https://plus.google.com/+VictorAnanjevsky'>Victor Ananjevsky</a>.\n\nI decided to share my <i>joy</i> with you because you may find it useful too.\n\nHave fun and bring joy into your lifes,\nJohn":lbl '' \
+		--field=$"<b><i>yalpam</i></b> is a helper tool for managing Arch Linux packages that I started to build in order to cope with my own personal <i>special</i> needs.\nIt uses the great tool <a href='https://sourceforge.net/projects/yad-dialog/'>yad</a> which is a personal project of <a href='https://plus.google.com/+VictorAnanjevsky'>Victor Ananjevsky</a>.\n\nI decided to share my <i>joy</i> with you because you may find it useful too.\nHave fun and bring joy into your lifes,\nJohn":lbl '' \
 		--field="":lbl '' \
 		--buttons-layout="center" \
 		--button=$"Close!gtk-close!Closes the current dialog":0 &>/dev/null & local pid=$!
@@ -293,8 +299,7 @@ yad --plug="${fkey}" --tabnum=2 --list --grid-lines="hor" \
     --search-column=2 --expand-column=2 --focus-field=1 \
     --column='No:':num --column='Package Name' --column='Package Version' <&4 &>/dev/null &
 
-echo -e '\f\n@disabled@' |\
-yad --plug="${fkey}" --tabnum=3 --form --cycle-read --focus-field=2 \
+yad --plug="${fkey}" --tabnum=3 --form --focus-field=2 \
     --field=$"Refresh pacman databases:chk" 'TRUE' \
     --field=$"Retrieve and Filter a list of the latest Manjaro-Arch Linux mirrors:chk" 'FALSE' \
     --field=$"Update packages:chk" 'TRUE' \
@@ -313,8 +318,8 @@ yad --key="${fkey}" --notebook --geometry=480x640+200+100 \
     --image="system-software-install" --image-on-top \
     --text=$"<span font_size='medium' font_weight='bold'>View Lists of Installed Packages</span>\n\
 These are <i><b>only</b> the explicitly installed</i> packages from all enabled repositories except for <i>base</i> repository. Also, you\'ll find packages that are locally installed such as <i>AUR</i> packages." \
-    --tab=" <i>System</i> packages category" \
-    --tab=" <i>Local/AUR</i> packages category" \
+    --tab=" <i>System</i> packages" \
+    --tab=" <i>Local/AUR</i> packages" \
     --tab=" Daily/Useful tasks" \
     --button=$"<span color='#0066ff'>_List/Update</span>!system-search!Scans databases for installed packages:bash -c 'doscan4pkgs'" \
     --button=$"_Save/Backup!gtk-save!Saves packages lists to disk for later use:bash -c 'dosavepkglists'" \
