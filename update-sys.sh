@@ -10,7 +10,7 @@
 #set -e set -x
 #set -x set -e
 
-[[ $EUID -ne 0 ]] && exec "sudo $0 $1";
+[[ $EUID -ne 0 ]] && exec sudo "$0" "$1";
 
 source "$(dirname "$0")"/libfuncs &>/dev/null || {
 	echo "Missing file: libfuncs";
