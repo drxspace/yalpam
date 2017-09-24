@@ -12,7 +12,7 @@ set -e
 #
 set -x
 
-export yalpamVersion="0.5.115"
+export yalpamVersion="0.5.215"
 
 export yalpamTitle="Yet another Arch Linux PAckage Manager"
 export yalpamName="yalpam"

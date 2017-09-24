@@ -19,17 +19,22 @@ source "$(dirname "$0")"/libfuncs &>/dev/null || {
 
 [[ "$1" = "-m" ]] || [[ "$1" = "" ]] || [[ "$1" = "-a" ]] && {
 	msg "Creating an initial ramdisk environment" 12;
-	mkinitcpio -n -p linux;
-	echo;
+	sudo mkinitcpio -n -p linux;
+	# Write any data buffered in memory out to disk
+	sudo sync
+	shift
 }
 
 [[ "$1" = "-g" ]] || [[ "$1" = "" ]] || [[ "$1" = "-a" ]] && {
 	if hash os-prober &>/dev/null; then
-		msg "Probing disks on the system for other operating systems" 12;
-		os-prober;
+		msg "Probing disks on the system for other operating systems" 10;
+		sudo os-prober;
 	fi
 	msg "Generating a GRUB configuration file" 10;
-	exec grub-mkconfig -o /boot/grub/grub.cfg;
+	exec sudo grub-mkconfig -o /boot/grub/grub.cfg;
+	# Write any data buffered in memory out to disk
+	sudo sync
+	shift
 }
 
 exit $?
