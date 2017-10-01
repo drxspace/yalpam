@@ -7,10 +7,10 @@
 # \__,_/   /_/     /_/|_|  /_____/   _  .___/ /_/  |_|\____/   /_____/
 #                                    /_/           drxspace@gmail.com
 #
-#set -e set -x
-#set -x set -e
+#set -e
+#set -x
 
-[[ $EUID -ne 0 ]] && exec sudo "$0" "$1";
+[[ $EUID -ne 0 ]] && exec sudo "$0" "$@"
 
 source "$(dirname "$0")"/libfuncs &>/dev/null || {
 	echo "Missing file: libfuncs";
@@ -22,7 +22,7 @@ source "$(dirname "$0")"/libfuncs &>/dev/null || {
 	sudo mkinitcpio -n -p linux;
 	# Write any data buffered in memory out to disk
 	sudo sync
-	shift
+	[[ $# -gt 1 ]] && shift
 }
 
 [[ "$1" = "-g" ]] || [[ "$1" = "" ]] || [[ "$1" = "-a" ]] && {
@@ -32,9 +32,6 @@ source "$(dirname "$0")"/libfuncs &>/dev/null || {
 	fi
 	msg "Generating a GRUB configuration file" 10;
 	exec sudo grub-mkconfig -o /boot/grub/grub.cfg;
-	# Write any data buffered in memory out to disk
-	sudo sync
-	shift
 }
 
 exit $?

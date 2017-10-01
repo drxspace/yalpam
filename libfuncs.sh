@@ -10,48 +10,48 @@
 #set -e
 #set -x
 
+ScriptVersion="0.9.1"
 ScriptName="$(basename $0)"
-ScriptVersion="0.9.0"
 
 msg() {
 	local msgStartOptions=""
-	local msgEndOptions="\e[0m"
+	local msgEndOptions="\033[0m"
 
 	case $2 in
 		0|"")	# Generic message
-			msgStartOptions="\e[1;33m${ScriptName}\e[0m: \e[94m"
+			msgStartOptions="\033[1;33m${ScriptName}\033[0m: \033[94m"
 			;;
 		1)	# Error message
-			msgStartOptions="\e[1;31m${ScriptName}\e[0m: \e[91m"
+			msgStartOptions="\033[1;31m${ScriptName}\033[0m: \033[91m"
 			;;
 		2)	# Warning
-			msgStartOptions="\e[1;38;5;209m${ScriptName}\e[0m: \e[93m"
+			msgStartOptions="\033[1;38;5;209m${ScriptName}\033[0m: \033[93m"
 			;;
 		3)	# Information
-			msgStartOptions="\e[1;94m${ScriptName}\e[0m: \e[94m"
+			msgStartOptions="\033[1;94m${ScriptName}\033[0m: \033[94m"
 			;;
 		4)	# Question
-			msgStartOptions="\e[1;38;5;57m${ScriptName}\e[0m: \e[36m"
+			msgStartOptions="\033[1;38;5;57m${ScriptName}\033[0m: \033[36m"
 			;;
 		5)	# Success
-			msgStartOptions="\e[1;92m${ScriptName}\e[0m: \e[32m"
+			msgStartOptions="\033[1;92m${ScriptName}\033[0m: \033[32m"
 			;;
 		10)	# Header
-			msgStartOptions="\n\e[1;34m:: \e[1;39m"
-			msgEndOptions="\e[0m\n"
+			msgStartOptions="\n\033[1;34m:: \033[1;39m"
+			msgEndOptions="\033[0m\n"
 			;;
 		11)	# Header
-			msgStartOptions="\n\e[1;34m:: \e[1;39m"
+			msgStartOptions="\n\033[1;34m:: \033[1;39m"
 			;;
 		12)	# Header
-			msgStartOptions="\e[1;34m:: \e[1;39m"
-			msgEndOptions="\e[0m\n"
+			msgStartOptions="\033[1;34m:: \033[1;39m"
+			msgEndOptions="\033[0m\n"
 			;;
 		13)	# Header
-			msgStartOptions="\e[1;34m:: \e[1;39m"
+			msgStartOptions="\033[1;34m:: \033[1;39m"
 			;;
 		*)	# Fallback to Generic message
-			msgStartOptions="\e[1;33m${ScriptName}\e[0m: \e[94m"
+			msgStartOptions="\033[1;33m${ScriptName}\033[0m: \033[94m"
 			;;
 	esac
 

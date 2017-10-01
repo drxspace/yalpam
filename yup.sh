@@ -7,8 +7,8 @@
 # \__,_/   /_/     /_/|_|  /_____/   _  .___/ /_/  |_|\____/   /_____/
 #                                    /_/           drxspace@gmail.com
 #
-#set -e set -x
-#set -x set -e
+#set -e
+#set -x
 
 source "$(dirname "$0")"/libfuncs &>/dev/null || {
 	echo "Missing file: libfuncs";

@@ -12,7 +12,7 @@ set -e
 #
 set -x
 
-export yalpamVersion="0.5.215"
+export yalpamVersion="0.5.315"
 
 export yalpamTitle="Yet another Arch Linux PAckage Manager"
 export yalpamName="yalpam"
@@ -100,15 +100,17 @@ doupdate() {
 export -f doupdate
 
 doadvanced() {
-	local argsyup
-	local argssys
+	local theCommand=
+	local argsyup=
+	local argssys=
 	echo "11:@disable@"
 	[[ "$1" = "TRUE" ]] && argsyup=$argsyup" -o"
 	[[ "$2" = "TRUE" ]] && argsyup=$argsyup" -r"
-	[[ "$argsyup" ]] && xterm ${xtermOptions} -e "yup $argsyup" && doscan4pkgs
 	[[ "$3" = "TRUE" ]] && argssys=$argssys" -m"
 	[[ "$4" = "TRUE" ]] && argssys=$argssys" -g"
-	[[ "$argssys" ]] && xterm ${xtermOptions} -e "update-sys $argssys"
+	[[ "$argsyup" ]] && theCommand=${theCommand}"yup $argsyup; "
+	[[ "$argssys" ]] && theCommand=${theCommand}"update-sys $argssys;"
+	[[ "$theCommand" ]] && xterm ${xtermOptions} -e "${theCommand}"
 	echo "7:FALSE"
 	echo "8:FALSE"
 	echo "9:FALSE"
@@ -252,6 +254,8 @@ export -f doabout
 dosavepkglists() {
 	local dirname=$(yad --file --directory --filename="${XDG_DOWNLOAD_DIR:-$HOME/Downloads}/" \
 			    --geometry=600x400+210+140 --skip-taskbar \
+			    --button="gtk-cancel":1 \
+			    --button="gtk-ok":0 \
 			    --title="Choose a directory to save the files...")
 	if [[ "${dirname}" ]]; then
 		pacman -Qqe |\
@@ -291,13 +295,13 @@ yad --plug="${fkey}" --tabnum=1 --list --grid-lines="hor" \
     --dclick-action='bash -c "doaction pacman %s %s %s"' \
     --text=$"List of <i>System</i> packages:\n<span font_size='small'>Double click on a package for more <i>action</i>.</span>" \
     --search-column=2 --expand-column=2 --focus-field=1 \
-    --column='No:':num --column='Package Name' --column='Package Version' <&3 &>/dev/null &
+    --column='№':num --column='Package Name' --column='Package Version' <&3 &>/dev/null &
 
 yad --plug="${fkey}" --tabnum=2 --list --grid-lines="hor" \
     --dclick-action='bash -c "doaction yaourt %s %s %s"' \
     --text=$"List of <i>Local/AUR</i> packages:\n<span font_size='small'>Double click on a package for more <i>action</i>.</span>" \
     --search-column=2 --expand-column=2 --focus-field=1 \
-    --column='No:':num --column='Package Name' --column='Package Version' <&4 &>/dev/null &
+    --column='№':num --column='Package Name' --column='Package Version' <&4 &>/dev/null &
 
 yad --plug="${fkey}" --tabnum=3 --form --focus-field=2 \
     --field=$"Refresh pacman databases:chk" 'TRUE' \
