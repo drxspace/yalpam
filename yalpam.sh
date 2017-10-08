@@ -12,7 +12,7 @@ set -e
 #
 set -x
 
-export yalpamVersion="0.5.315"
+export yalpamVersion="0.5.545"
 
 export yalpamTitle="Yet another Arch Linux PAckage Manager"
 export yalpamName="yalpam"
@@ -92,7 +92,9 @@ doupdate() {
 	[[ "$3" = "TRUE" ]] && args=$args" -u"
 	[[ "$4" = "TRUE" ]] && args=$args" -p"
 	xterm ${xtermOptions} -e "yup $args" && doscan4pkgs
+	echo "1:TRUE"
 	echo "2:FALSE"
+	echo "3:TRUE"
 	echo "4:FALSE"
 	echo '5:@bash -c "doupdate %1 %2 %3 %4"'
 	return
@@ -302,6 +304,8 @@ yad --plug="${fkey}" --tabnum=2 --list --grid-lines="hor" \
     --text=$"List of <i>Local/AUR</i> packages:\n<span font_size='small'>Double click on a package for more <i>action</i>.</span>" \
     --search-column=2 --expand-column=2 --focus-field=1 \
     --column='№':num --column='Package Name' --column='Package Version' <&4 &>/dev/null &
+
+doscan4pkgs
 
 yad --plug="${fkey}" --tabnum=3 --form --focus-field=2 \
     --field=$"Refresh pacman databases:chk" 'TRUE' \
