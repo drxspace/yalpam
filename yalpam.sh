@@ -12,7 +12,7 @@ set -e
 #
 set -x
 
-export yalpamVersion="0.5.545"
+export yalpamVersion="0.5.655"
 
 export yalpamTitle="Yet another Arch Linux PAckage Manager"
 export yalpamName="yalpam"
@@ -272,14 +272,14 @@ export -f dosavepkglists
 doscan4pkgs() {
 	echo -e '\f' >> "${fpipepkgssys}"
 	pacman -Qe |\
-		grep -vx "$(pacman -Qg base)" |\
-		grep -vx "$(pacman -Qm)" |\
+		grep -vx "$(pacman -Qg base base-devel)" |\
+		grep -vx "$(pacman -Qm)" | sort |\
 		awk '{printf "%d\n%s\n%s\n", ++i, $1, $2}' |\
 		tee -a "${fpipepkgssys}" |\
 		yad --progress --pulsate --auto-close --no-buttons --width=320 --align="center" --center --borders=9 --skip-taskbar --title="Querying packages" --text-align="center" --text=$"One moment please. Querying <i>System</i> packages..."
 
 	echo -e '\f' >> "${fpipepkgslcl}"
-	pacman -Qm | awk '{printf "%d\n%s\n%s\n", ++i, $1, $2}' |\
+	pacman -Qm | sort | awk '{printf "%d\n%s\n%s\n", ++i, $1, $2}' |\
 		tee -a "${fpipepkgslcl}" |\
 		yad --progress --pulsate --auto-close --no-buttons --width=320 --align="center" --center --borders=9 --skip-taskbar --title="Querying packages" --text-align="center" --text=$"One moment please. Querying <i>Local/AUR</i> packages..."
 	return
@@ -305,7 +305,7 @@ yad --plug="${fkey}" --tabnum=2 --list --grid-lines="hor" \
     --search-column=2 --expand-column=2 --focus-field=1 \
     --column='№':num --column='Package Name' --column='Package Version' <&4 &>/dev/null &
 
-doscan4pkgs
+doscan4pkgs &
 
 yad --plug="${fkey}" --tabnum=3 --form --focus-field=2 \
     --field=$"Refresh pacman databases:chk" 'TRUE' \

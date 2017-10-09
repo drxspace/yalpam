@@ -261,7 +261,7 @@ if $Purge; then
 		# Cleaning an Arch Linux installation
 		# https://andreascarpino.it/posts/cleaning-an-arch-linux-installation.html
 		if [[ -n $(pacman -Qqdtt) ]]; then
-			sudo pacman --color always -Rs $(pacman -Qqdtt)
+			sudo pacman --color always -Rscn $(pacman -Qqdtt)
 		fi
 
 		# -c, --clean
