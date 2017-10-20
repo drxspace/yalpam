@@ -12,7 +12,7 @@ set -e
 #
 set -x
 
-export yalpamVersion="0.5.655"
+export yalpamVersion="0.5.665"
 
 export yalpamTitle="Yet another Arch Linux PAckage Manager"
 export yalpamName="yalpam"
@@ -276,12 +276,12 @@ doscan4pkgs() {
 		grep -vx "$(pacman -Qm)" | sort |\
 		awk '{printf "%d\n%s\n%s\n", ++i, $1, $2}' |\
 		tee -a "${fpipepkgssys}" |\
-		yad --progress --pulsate --auto-close --no-buttons --width=320 --align="center" --center --borders=9 --skip-taskbar --title="Querying packages" --text-align="center" --text=$"One moment please. Querying <i>System</i> packages..."
+		yad --progress --pulsate --auto-close --no-buttons --width=400 --align="center" --center --borders=9 --skip-taskbar --title="Querying packages" --text-align="center" --text=$"One moment please. Querying <i>System</i> packages..."
 
 	echo -e '\f' >> "${fpipepkgslcl}"
 	pacman -Qm | sort | awk '{printf "%d\n%s\n%s\n", ++i, $1, $2}' |\
 		tee -a "${fpipepkgslcl}" |\
-		yad --progress --pulsate --auto-close --no-buttons --width=320 --align="center" --center --borders=9 --skip-taskbar --title="Querying packages" --text-align="center" --text=$"One moment please. Querying <i>Local/AUR</i> packages..."
+		yad --progress --pulsate --auto-close --no-buttons --width=400 --align="center" --center --borders=9 --skip-taskbar --title="Querying packages" --text-align="center" --text=$"One moment please. Querying <i>Local/AUR</i> packages..."
 	return
 }
 export -f doscan4pkgs
@@ -305,11 +305,11 @@ yad --plug="${fkey}" --tabnum=2 --list --grid-lines="hor" \
     --search-column=2 --expand-column=2 --focus-field=1 \
     --column='№':num --column='Package Name' --column='Package Version' <&4 &>/dev/null &
 
-doscan4pkgs &
+doscan4pkgs
 
 yad --plug="${fkey}" --tabnum=3 --form --focus-field=2 \
     --field=$"Refresh pacman databases:chk" 'TRUE' \
-    --field=$"Retrieve and Filter a list of the latest Manjaro-Arch Linux mirrors:chk" 'FALSE' \
+    --field=$"Retrieve and Filter a list of the latest Arch Linux mirrors:chk" 'FALSE' \
     --field=$"Update packages:chk" 'TRUE' \
     --field=$"Clean ALL files from cache, unused and sync repositories databases:chk" 'FALSE' \
     --field=$"Refresh, Update, Clean!/usr/share/icons/HighContrast/16x16/apps/system-software-update.png:fbtn" '@bash -c "doupdate %1 %2 %3 %4"' \
