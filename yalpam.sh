@@ -12,7 +12,7 @@ set -e
 #
 set -x
 
-export yalpamVersion="0.5.865"
+export yalpamVersion="0.5.875"
 
 export yalpamTitle="Yet another Arch Linux PAckage Manager"
 export yalpamName="yalpam"
@@ -223,7 +223,7 @@ doaction() {
 		--field=$"<span color='#006699'>Try to <i>_execute</i> the selected package</span>!system-run":btn 'bash -c "doexecpkg $package"' \
 		--field="":lbl '' \
 		--field=$"<span color='#006699'>_Browse the package on the web</span>!go-home":btn 'bash -c "docrawl $manager $package"' \
-		--field=$"<span color='#006699'>Try to view the <i>_man page</i> of the selected package</span>!system-help":btn 'bash -c "domanpage $package"' \
+		--field=$"<span color='#006699'>Try to view the <i>_man page</i> of the selected package</span>!help-contents":btn 'bash -c "domanpage $package"' \
 		--field="":lbl '' \
 		--buttons-layout="center" \
 		--button=$"_Close!application-exit!Closes the current dialog":0 &>/dev/null & local pid=$!
@@ -325,7 +325,7 @@ yad --key="${fkey}" --notebook --geometry=480x640+200+100 \
     --window-icon="system-software-install" --title=$"${yalpamTitle} v${yalpamVersion}" \
     --image="system-software-install" --image-on-top \
     --text=$"<span font_size='medium' font_weight='bold'>View Lists of Installed Packages</span>\n\
-These are <i><b>only</b> the explicitly installed</i> packages from all enabled repositories except for <i>base</i> repository. Also, you\'ll find packages that are locally installed such as <i>AUR</i> packages." \
+These are <i><b>only</b> the explicitly installed</i> packages from all enabled repositories except for <i>base</i> and <i>base-devel</i>. Also, you\'ll find packages that are locally installed such as <i>AUR</i> packages." \
     --tab=" <i>System</i> packages" \
     --tab=" <i>Local/AUR</i> packages" \
     --tab=" Daily/Useful tasks" \
