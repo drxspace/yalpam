@@ -12,7 +12,7 @@ set -e
 #
 set -x
 
-export yalpamVersion="0.5.665"
+export yalpamVersion="0.5.865"
 
 export yalpamTitle="Yet another Arch Linux PAckage Manager"
 export yalpamName="yalpam"
@@ -216,17 +216,17 @@ doaction() {
 		--geometry=+220+140 --skip-taskbar --title="Choose action:" \
 		--image="dialog-information" --image-on-top \
 		--text=$"Please, choose your desired action from the list below by clicking one of its elements." \
-		--field=$"<span color='#006699'>_Reinstall/Update selected package</span>!gtk-refresh":btn 'bash -c "doreinstpkg $manager $package"' \
-		--field=$"<span color='#006699'>_Uninstall/Remove selected package</span>!gtk-delete":btn 'bash -c "doremovepkg $manager $package"' \
-		--field=$"<span color='#006699'>_Install a package of the selected category</span>!gtk-go-down":btn 'bash -c "doinstpkg $manager"' \
+		--field=$"<span color='#006699'>_Reinstall/Update selected package</span>!view-refresh":btn 'bash -c "doreinstpkg $manager $package"' \
+		--field=$"<span color='#006699'>_Uninstall/Remove selected package</span>!edit-delete":btn 'bash -c "doremovepkg $manager $package"' \
+		--field=$"<span color='#006699'>_Install a package of the selected category</span>!go-down":btn 'bash -c "doinstpkg $manager"' \
 		--field="":lbl '' \
-		--field=$"<span color='#006699'>Try to <i>_execute</i> the selected package</span>!gtk-execute":btn 'bash -c "doexecpkg $package"' \
+		--field=$"<span color='#006699'>Try to <i>_execute</i> the selected package</span>!system-run":btn 'bash -c "doexecpkg $package"' \
 		--field="":lbl '' \
-		--field=$"<span color='#006699'>_Browse the package on the web</span>!gtk-home":btn 'bash -c "docrawl $manager $package"' \
-		--field=$"<span color='#006699'>Try to view the <i>_man page</i> of the selected package</span>!gtk-help":btn 'bash -c "domanpage $package"' \
+		--field=$"<span color='#006699'>_Browse the package on the web</span>!go-home":btn 'bash -c "docrawl $manager $package"' \
+		--field=$"<span color='#006699'>Try to view the <i>_man page</i> of the selected package</span>!system-help":btn 'bash -c "domanpage $package"' \
 		--field="":lbl '' \
 		--buttons-layout="center" \
-		--button=$"Close!gtk-close!Closes the current dialog":0 &>/dev/null & local pid=$!
+		--button=$"_Close!application-exit!Closes the current dialog":0 &>/dev/null & local pid=$!
 	sed -i "s/openedFormPIDs=(\(.*\))/openedFormPIDs=(\1 $(echo ${pid}))/" ${frunningPIDs}
 	wait ${pid}
 	[[ -e ${frunningPIDs} ]] && sed -i "s/ $(echo ${pid})//" ${frunningPIDs}
@@ -245,7 +245,7 @@ doabout() {
 		--field=$"<b><i>yalpam</i></b> is a helper tool for managing Arch Linux packages that I started to build in order to cope with my own personal <i>special</i> needs.\nIt uses the great tool <a href='https://sourceforge.net/projects/yad-dialog/'>yad</a> which is a personal project of <a href='https://plus.google.com/+VictorAnanjevsky'>Victor Ananjevsky</a>.\n\nI decided to share my <i>joy</i> with you because you may find it useful too.\nHave fun and bring joy into your lifes,\nJohn":lbl '' \
 		--field="":lbl '' \
 		--buttons-layout="center" \
-		--button=$"Close!gtk-close!Closes the current dialog":0 &>/dev/null & local pid=$!
+		--button=$"_Close!application-exit!Closes the current dialog":0 &>/dev/null & local pid=$!
 	sed -i "s/openedFormPIDs=(\(.*\))/openedFormPIDs=(\1 $(echo ${pid}))/" ${frunningPIDs}
 	wait ${pid}
 	[[ -e ${frunningPIDs} ]] && sed -i "s/ $(echo ${pid})//" ${frunningPIDs}
@@ -276,12 +276,12 @@ doscan4pkgs() {
 		grep -vx "$(pacman -Qm)" | sort |\
 		awk '{printf "%d\n%s\n%s\n", ++i, $1, $2}' |\
 		tee -a "${fpipepkgssys}" |\
-		yad --progress --pulsate --auto-close --no-buttons --width=400 --align="center" --center --borders=9 --skip-taskbar --title="Querying packages" --text-align="center" --text=$"One moment please. Querying <i>System</i> packages..."
+		yad --progress --pulsate --auto-close --no-buttons --width=340 --align="center" --center --borders=9 --skip-taskbar --title="Querying packages" --text-align="center" --text=$"One moment please. Querying <i>System</i> packages..."
 
 	echo -e '\f' >> "${fpipepkgslcl}"
 	pacman -Qm | sort | awk '{printf "%d\n%s\n%s\n", ++i, $1, $2}' |\
 		tee -a "${fpipepkgslcl}" |\
-		yad --progress --pulsate --auto-close --no-buttons --width=400 --align="center" --center --borders=9 --skip-taskbar --title="Querying packages" --text-align="center" --text=$"One moment please. Querying <i>Local/AUR</i> packages..."
+		yad --progress --pulsate --auto-close --no-buttons --width=340 --align="center" --center --borders=9 --skip-taskbar --title="Querying packages" --text-align="center" --text=$"One moment please. Querying <i>Local/AUR</i> packages..."
 	return
 }
 export -f doscan4pkgs
@@ -330,9 +330,9 @@ These are <i><b>only</b> the explicitly installed</i> packages from all enabled 
     --tab=" <i>Local/AUR</i> packages" \
     --tab=" Daily/Useful tasks" \
     --button=$"<span color='#0066ff'>_List/Update</span>!system-search!Scans databases for installed packages:bash -c 'doscan4pkgs'" \
-    --button=$"_Save/Backup!gtk-save!Saves packages lists to disk for later use:bash -c 'dosavepkglists'" \
-    --button="gtk-about:bash -c 'doabout'" \
-    --button="gtk-close":0 &>/dev/null
+    --button=$"_Save...!document-save!Saves packages lists to disk for later use:bash -c 'dosavepkglists'" \
+    --button="_About...!help-about:bash -c 'doabout'" \
+    --button="_Quit!application-exit":0 &>/dev/null
 
 # -----------------------------------------------------------------------------|
 
