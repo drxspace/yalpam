@@ -12,7 +12,7 @@ set -e
 #
 set -x
 
-export yalpamVersion="0.5.875"
+export yalpamVersion="0.6.005"
 
 export yalpamTitle="Yet another Arch Linux PAckage Manager"
 export yalpamName="yalpam"
@@ -77,8 +77,12 @@ mkfifo "${fpipepkgssys}" "${fpipepkgslcl}"
 
 export GDK_BACKEND=x11	# https://groups.google.com/d/msg/yad-common/Jnt-zCeCVg4/Gwzx-O-2BQAJ
 
-export xtermOptions="-geometry 128x24 -fa 'Monospace' -fs 9 -bg RoyalBlue"
-# -rightbar -sb -- export IAdmin="pkexec env DISPLAY=$DISPLAY XAUTHORITY=$XAUTHORITY"
+export xtermOptionsGreen="-geometry 128x24 -fa 'Monospace' -fs 9 -bg SeaGreen"
+export xtermOptionsBlue="-geometry 128x24 -fa 'Monospace' -fs 9 -bg RoyalBlue"
+export xtermOptionsRed="-geometry 128x24 -fa 'Monospace' -fs 9 -bg red3"
+# -rightbar -sb
+
+# -- export IAdmin="pkexec env DISPLAY=$DISPLAY XAUTHORITY=$XAUTHORITY"
 export IAdmin="sudo"
 
 declare -a runningPIDs=()
@@ -91,7 +95,7 @@ doupdate() {
 	[[ "$2" = "TRUE" ]] && args=$args" -m"
 	[[ "$3" = "TRUE" ]] && args=$args" -u"
 	[[ "$4" = "TRUE" ]] && args=$args" -p"
-	xterm ${xtermOptions} -e "yup $args" && doscan4pkgs
+	xterm ${xtermOptionsBlue} -e "yup $args" && doscan4pkgs
 	echo "1:TRUE"
 	echo "2:FALSE"
 	echo "3:TRUE"
@@ -112,7 +116,7 @@ doadvanced() {
 	[[ "$4" = "TRUE" ]] && argssys=$argssys" -g"
 	[[ "$argsyup" ]] && theCommand=${theCommand}"yup $argsyup; "
 	[[ "$argssys" ]] && theCommand=${theCommand}"update-sys $argssys;"
-	[[ "$theCommand" ]] && xterm ${xtermOptions} -e "${theCommand}"
+	[[ "$theCommand" ]] && xterm ${xtermOptionsRed} -e "${theCommand}"
 	echo "7:FALSE"
 	echo "8:FALSE"
 	echo "9:FALSE"
@@ -126,7 +130,7 @@ export -f doadvanced
 
 doreinstpkg() {
 	kill -s USR1 $YAD_PID # Close caller window
-	xterm ${xtermOptions} -e "[[ \"$1\" == \"pacman\" ]] && { $IAdmin $1 -Sy --force --noconfirm $2; } || { $1 -Sya --force --noconfirm $2; }"
+	xterm ${xtermOptionsGreen} -e "[[ \"$1\" == \"pacman\" ]] && { $IAdmin $1 -Sy --force --noconfirm $2; } || { $1 -Sya --force --noconfirm $2; }"
 	doscan4pkgs
 	return
 }
@@ -134,7 +138,7 @@ export -f doreinstpkg
 
 doremovepkg() {
 	kill -s USR1 $YAD_PID # Close caller window
-	xterm ${xtermOptions} -e "$IAdmin $1 -Rcsn $2" && doscan4pkgs
+	xterm ${xtermOptionsRed} -e "$IAdmin $1 -Rcsn $2" && doscan4pkgs
 	return
 }
 export -f doremovepkg
@@ -171,7 +175,7 @@ doinstpkg() {
 
 	fxtermstatus=$(mktemp -u --tmpdir xtermstatus.XXXXXXXX)
 	[[ $ret -eq 0 ]] && [[ "${packagenames}" ]] && {
-		xterm ${xtermOptions} -e "[[ \"$1\" == \"pacman\" ]] && { $IAdmin $1 -Sy ${packagenames}; } || { $1 -Sya ${packagenames}; };" # echo $?" >${fxtermstatus}
+		xterm ${xtermOptionsBlue} -e "[[ \"$1\" == \"pacman\" ]] && { $IAdmin $1 -Sy ${packagenames}; } || { $1 -Sya ${packagenames}; };" # echo $?" >${fxtermstatus}
 		[[ $(<$fxtermstatus) -eq 0 ]] && doscan4pkgs || $(${errorSnd})
 	}
 	rm -f ${fxtermstatus}
@@ -216,17 +220,17 @@ doaction() {
 		--geometry=+220+140 --skip-taskbar --title="Choose action:" \
 		--image="dialog-information" --image-on-top \
 		--text=$"Please, choose your desired action from the list below by clicking one of its elements." \
-		--field=$"<span color='#006699'>_Reinstall/Update selected package</span>!view-refresh":btn 'bash -c "doreinstpkg $manager $package"' \
-		--field=$"<span color='#006699'>_Uninstall/Remove selected package</span>!edit-delete":btn 'bash -c "doremovepkg $manager $package"' \
-		--field=$"<span color='#006699'>_Install a package of the selected category</span>!go-down":btn 'bash -c "doinstpkg $manager"' \
+		--field=$" <span color='#006699'>_Reinstall/Update selected package</span>!view-refresh":btn 'bash -c "doreinstpkg $manager $package"' \
+		--field=$" <span color='#006699'>_Uninstall/Remove selected package</span>!edit-delete":btn 'bash -c "doremovepkg $manager $package"' \
+		--field=$" <span color='#006699'>_Install a package of the selected category</span>!go-down":btn 'bash -c "doinstpkg $manager"' \
 		--field="":lbl '' \
-		--field=$"<span color='#006699'>Try to <i>_execute</i> the selected package</span>!system-run":btn 'bash -c "doexecpkg $package"' \
+		--field=$" <span color='#006699'>Try to <i>_execute</i> the selected package</span>!system-run":btn 'bash -c "doexecpkg $package"' \
 		--field="":lbl '' \
-		--field=$"<span color='#006699'>_Browse the package on the web</span>!go-home":btn 'bash -c "docrawl $manager $package"' \
+		--field=$" <span color='#006699'>_Browse the package on the web</span>!go-home":btn 'bash -c "docrawl $manager $package"' \
 		--field=$"<span color='#006699'>Try to view the <i>_man page</i> of the selected package</span>!help-contents":btn 'bash -c "domanpage $package"' \
 		--field="":lbl '' \
 		--buttons-layout="center" \
-		--button=$"_Close!application-exit!Closes the current dialog":0 &>/dev/null & local pid=$!
+		--button=$" _Close!application-exit!Closes the current dialog":0 &>/dev/null & local pid=$!
 	sed -i "s/openedFormPIDs=(\(.*\))/openedFormPIDs=(\1 $(echo ${pid}))/" ${frunningPIDs}
 	wait ${pid}
 	[[ -e ${frunningPIDs} ]] && sed -i "s/ $(echo ${pid})//" ${frunningPIDs}
@@ -261,7 +265,7 @@ dosavepkglists() {
 			    --title="Choose a directory to save the files...")
 	if [[ "${dirname}" ]]; then
 		pacman -Qqe |\
-			grep -vx "$(pacman -Qqg base)" |\
+			grep -vx "$(pacman -Qqg base base-devel)" |\
 			grep -vx "$(pacman -Qqm)" > "${dirname}"/$(date -u +"%g%m%d")-SYSTEMpkgs.txt
 		pacman -Qqm > "${dirname}"/$(date -u +"%g%m%d")-LOCALpkgs.txt
 	fi
@@ -312,13 +316,13 @@ yad --plug="${fkey}" --tabnum=3 --form --focus-field=2 \
     --field=$"Retrieve and Filter a list of the latest Arch Linux mirrors:chk" 'FALSE' \
     --field=$"Update packages:chk" 'TRUE' \
     --field=$"Clean ALL files from cache, unused and sync repositories databases:chk" 'FALSE' \
-    --field=$"Refresh, Update, Clean!/usr/share/icons/HighContrast/16x16/apps/system-software-update.png:fbtn" '@bash -c "doupdate %1 %2 %3 %4"' \
+    --field=$" Refresh [ [Retrieve] [Update] [Clean] ]!/usr/share/icons/HighContrast/16x16/apps/system-software-update.png:fbtn" '@bash -c "doupdate %1 %2 %3 %4"' \
     --field="":lbl '' \
     --field=$"Optimize pacman databases:chk" 'FALSE' \
     --field=$"Refresh pacman GnuPG keys:chk" 'FALSE' \
     --field=$"Create an initial ramdisk environment:chk" 'FALSE' \
     --field=$"Generate a GRUB configuration file:chk" 'FALSE' \
-    --field=$"Optimize, Refresh, mkinitcpio, grub-mkconfig !/usr/share/icons/Adwaita/16x16/categories/preferences-system.png:fbtn" '@bash -c "doadvanced %7 %8 %9 %10"' &>/dev/null &
+    --field=$" <span color='#990000'>[Optimize] [GnuPG] [Ramdisk] [Grub]</span>!/usr/share/icons/Adwaita/16x16/categories/preferences-system.png:fbtn" '@bash -c "doadvanced %7 %8 %9 %10"' &>/dev/null &
 
 yad --key="${fkey}" --notebook --geometry=480x640+200+100 \
     --borders=9 --tab-borders=3 --active-tab=1 --focus-field=1 \
