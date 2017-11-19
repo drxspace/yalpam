@@ -8,8 +8,8 @@
 #                                    /_/           drxspace@gmail.com
 #
 
-makepkg -Csrcfi --noconfirm
+makepkg -Csrcfi
 
-rm -rfv yad-*.tar*
+rm -rfv *.tar* src yad
 
 exit

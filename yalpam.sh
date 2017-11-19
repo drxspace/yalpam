@@ -12,7 +12,7 @@ set -e
 #
 set -x
 
-export yalpamVersion="0.6.005"
+export yalpamVersion="0.6.645"
 
 export yalpamTitle="Yet another Arch Linux PAckage Manager"
 export yalpamName="yalpam"
@@ -246,7 +246,7 @@ doabout() {
 		--image="system-software-install" --image-on-top \
 		--text=$"<span font_size='medium' font_weight='bold'>${yalpamTitle} v${yalpamVersion}</span>\nby John A Ginis (a.k.a. <a href='https://github.com/drxspace'>drxspace</a>)\n<span font_size='small'>build on Summer of 2017</span>" \
 		--field="":lbl '' \
-		--field=$"<b><i>yalpam</i></b> is a helper tool for managing Arch Linux packages that I started to build in order to cope with my own personal <i>special</i> needs.\nIt uses the great tool <a href='https://sourceforge.net/projects/yad-dialog/'>yad</a> which is a personal project of <a href='https://plus.google.com/+VictorAnanjevsky'>Victor Ananjevsky</a>.\n\nI decided to share my <i>joy</i> with you because you may find it useful too.\nHave fun and bring joy into your lifes,\nJohn":lbl '' \
+		--field=$"<b><i>yalpam</i></b> is a helper tool for managing Arch Linux packages that I started to build in order to cope with my own personal <i>special</i> needs.\nIt uses the great tool <a href='https://github.com/v1cont/yad'>yad</a> v$(yad --version)  which is a personal project of <a href='https://plus.google.com/+VictorAnanjevsky'>Victor Ananjevsky</a>.\n\nI decided to share my <i>joy</i> with you because you may find it useful too.\nHave fun and bring joy into your lifes,\nJohn":lbl '' \
 		--field="":lbl '' \
 		--buttons-layout="center" \
 		--button=$"_Close!application-exit!Closes the current dialog":0 &>/dev/null & local pid=$!

@@ -19,7 +19,7 @@ source "$(dirname "$0")"/libfuncs &>/dev/null || {
 
 [[ "$1" = "-m" ]] || [[ "$1" = "" ]] || [[ "$1" = "-a" ]] && {
 	msg "Creating an initial ramdisk environment" 12;
-	sudo mkinitcpio -n -p linux;
+	sudo mkinitcpio -p linux;
 	# Write any data buffered in memory out to disk
 	sudo sync
 	[[ $# -gt 1 ]] && shift
