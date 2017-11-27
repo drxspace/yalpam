@@ -12,7 +12,7 @@ set -e
 #
 set -x
 
-export yalpamVersion="0.6.645"
+export yalpamVersion="0.6.998"
 
 export yalpamTitle="Yet another Arch Linux PAckage Manager"
 export yalpamName="yalpam"
@@ -143,7 +143,7 @@ doremovepkg() {
 }
 export -f doremovepkg
 
-function on_click ()
+function instbtn_onclick ()
 {
 	[[ "$1" ]] && [[ "$1" != "<Type one or more package names>" ]] && {
 		echo -n "$1" > ${frealtemp}
@@ -153,19 +153,19 @@ function on_click ()
 		echo "2:<Type one or more package names>"
 	}
 }
-export -f on_click
+export -f instbtn_onclick
 
 doinstpkg() {
 	local ret=
 	local packagenames=
 	kill -s USR1 $YAD_PID # Close caller window
-	yad	--form --width=460 --borders=9 --align="center" --center --fixed --skip-taskbar \
+	yad	--form --width=460 --borders=6 --center --fixed --skip-taskbar \
 		--geometry=+540+140 --image="/usr/share/icons/Adwaita/48x48/emblems/emblem-package.png" --title="Enter package name(s)..." \
 		--no-buttons --columns=2 --focus-field=2 \
 		--field=$"Input here one or more package names separated by <i>blank</i> characters:":lbl '' \
 		--field='' '' \
 		--field="gtk-cancel":fbtn 'bash -c "kill -s USR2 $YAD_PID"' \
-		--field="gtk-ok":fbtn '@bash -c "on_click %2"' &>/dev/null & local pid=$!
+		--field="gtk-ok":fbtn '@bash -c "instbtn_onclick %2"' &>/dev/null & local pid=$!
 
 	sed -i "s/openedFormPIDs=(\(.*\))/openedFormPIDs=(\1 $(echo ${pid}))/" ${frunningPIDs}
 	wait ${pid}
@@ -203,6 +203,23 @@ doexecpkg() {
 }
 export -f doexecpkg
 
+doshowinfo() {
+	kill -s USR1 $YAD_PID # Close caller window
+	local pkgnfo=$()
+	yaourt -Qii ${1} | \
+	yad 	--text-info --borders=6 --text-align="left" \
+		--geometry=480x500+240+140 --skip-taskbar --title="Information about the selected package" \
+		--image="dialog-information" --image-on-top \
+		--text=$"This dialog displays specific information, such as Version, Description, Dependencies etc, about the selected installed package:\n<b><i>${1}</i></b>" \
+		--buttons-layout="center" \
+		--button=$"_Close!application-exit!Closes the current dialog":0 &>/dev/null & local pid=$!
+	sed -i "s/openedFormPIDs=(\(.*\))/openedFormPIDs=(\1 $(echo ${pid}))/" ${frunningPIDs}
+	wait ${pid}
+	[[ -e ${frunningPIDs} ]] && sed -i "s/ $(echo ${pid})//" ${frunningPIDs}
+	return
+}
+export -f doshowinfo
+
 domanpage() {
 	kill -s USR1 $YAD_PID # Close caller window
 	man $1 &>/dev/null || $(${infoSnd}) && xterm -geometry 94x60 -fa 'Monospace' -fs 9 -bg CadetBlue -e man $1
@@ -216,18 +233,20 @@ doaction() {
 	export manager=$1
 	export package=$3
 
-	yad	--form --width=400 --borders=3 --align="center" --fixed \
-		--geometry=+220+140 --skip-taskbar --title="Choose action:" \
+	yad	--form --width=360 --borders=6 --fixed \
+		--geometry=+240+140 --skip-taskbar --title="Choose action:" \
 		--image="dialog-information" --image-on-top \
-		--text=$"Please, choose your desired action from the list below by clicking one of its elements." \
-		--field=$" <span color='#006699'>_Reinstall/Update selected package</span>!view-refresh":btn 'bash -c "doreinstpkg $manager $package"' \
-		--field=$" <span color='#006699'>_Uninstall/Remove selected package</span>!edit-delete":btn 'bash -c "doremovepkg $manager $package"' \
-		--field=$" <span color='#006699'>_Install a package of the selected category</span>!go-down":btn 'bash -c "doinstpkg $manager"' \
+		--text=$"Please, choose your desired action from the\nlist below to apply to the selected package\nby clicking one of its elements." \
 		--field="":lbl '' \
-		--field=$" <span color='#006699'>Try to <i>_execute</i> the selected package</span>!system-run":btn 'bash -c "doexecpkg $package"' \
+		--field=$" <span color='#206EB8'>_Reinstall/Update selected package</span>!view-refresh":btn 'bash -c "doreinstpkg $manager $package"' \
+		--field=$" <span color='#206EB8'>_Uninstall/Remove selected package + dependencies</span>!edit-delete":btn 'bash -c "doremovepkg $manager $package"' \
+		--field=$" <span color='#206EB8'>_Install a package of the selected category</span>!go-down":btn 'bash -c "doinstpkg $manager"' \
 		--field="":lbl '' \
-		--field=$" <span color='#006699'>_Browse the package on the web</span>!go-home":btn 'bash -c "docrawl $manager $package"' \
-		--field=$"<span color='#006699'>Try to view the <i>_man page</i> of the selected package</span>!help-contents":btn 'bash -c "domanpage $package"' \
+		--field=$" <span color='#206EB8'>Try to <i>_execute</i> the selected package</span>!system-run":btn 'bash -c "doexecpkg $package"' \
+		--field="":lbl '' \
+		--field=$" <span color='#206EB8'>_Browse the package on the web</span>!go-home":btn 'bash -c "docrawl $manager $package"' \
+		--field=$" <span color='#206EB8'>View inf_ormation about the selected package</span>!dialog-information":btn 'bash -c "doshowinfo $package"' \
+		--field=$"<span color='#206EB8'>Try to view the <i>_man page</i> of the selected package</span>!help-contents":btn 'bash -c "domanpage $package"' \
 		--field="":lbl '' \
 		--buttons-layout="center" \
 		--button=$" _Close!application-exit!Closes the current dialog":0 &>/dev/null & local pid=$!
@@ -241,8 +260,8 @@ export -f doaction
 # ---[ Buttons functionality ]-------------------------------------------------|
 
 doabout() {
-	yad	--form --width=460 --borders=9 --align="center" --text-align="fill" --fixed \
-		--geometry=+240+140 --skip-taskbar --title="About ${yalpamTitle}" --justify="center" \
+	yad	--form --borders=6 --text-align="left" --fixed \
+		--geometry=+240+140 --skip-taskbar --title="About ${yalpamTitle}" \
 		--image="system-software-install" --image-on-top \
 		--text=$"<span font_size='medium' font_weight='bold'>${yalpamTitle} v${yalpamVersion}</span>\nby John A Ginis (a.k.a. <a href='https://github.com/drxspace'>drxspace</a>)\n<span font_size='small'>build on Summer of 2017</span>" \
 		--field="":lbl '' \
@@ -280,12 +299,12 @@ doscan4pkgs() {
 		grep -vx "$(pacman -Qm)" | sort |\
 		awk '{printf "%d\n%s\n%s\n", ++i, $1, $2}' |\
 		tee -a "${fpipepkgssys}" |\
-		yad --progress --pulsate --auto-close --no-buttons --width=340 --align="center" --center --borders=9 --skip-taskbar --title="Querying packages" --text-align="center" --text=$"One moment please. Querying <i>System</i> packages..."
+		yad --progress --pulsate --auto-close --no-buttons --width=340 --align="center" --center --borders=6 --skip-taskbar --title="Querying packages" --text-align="center" --text=$"One moment please. Querying <i>System</i> packages..."
 
 	echo -e '\f' >> "${fpipepkgslcl}"
 	pacman -Qm | sort | awk '{printf "%d\n%s\n%s\n", ++i, $1, $2}' |\
 		tee -a "${fpipepkgslcl}" |\
-		yad --progress --pulsate --auto-close --no-buttons --width=340 --align="center" --center --borders=9 --skip-taskbar --title="Querying packages" --text-align="center" --text=$"One moment please. Querying <i>Local/AUR</i> packages..."
+		yad --progress --pulsate --auto-close --no-buttons --width=340 --align="center" --center --borders=6 --skip-taskbar --title="Querying packages" --text-align="center" --text=$"One moment please. Querying <i>Local/AUR</i> packages..."
 	return
 }
 export -f doscan4pkgs
@@ -316,16 +335,16 @@ yad --plug="${fkey}" --tabnum=3 --form --focus-field=2 \
     --field=$"Retrieve and Filter a list of the latest Arch Linux mirrors:chk" 'FALSE' \
     --field=$"Update packages:chk" 'TRUE' \
     --field=$"Clean ALL files from cache, unused and sync repositories databases:chk" 'FALSE' \
-    --field=$" Refresh [ [Retrieve] [Update] [Clean] ]!/usr/share/icons/HighContrast/16x16/apps/system-software-update.png:fbtn" '@bash -c "doupdate %1 %2 %3 %4"' \
+    --field=$" <span color='#206EB8'>Refresh [ [Retrieve] [Update] [Clean] ]</span>!/usr/share/icons/HighContrast/16x16/apps/system-software-update.png:fbtn" '@bash -c "doupdate %1 %2 %3 %4"' \
     --field="":lbl '' \
     --field=$"Optimize pacman databases:chk" 'FALSE' \
     --field=$"Refresh pacman GnuPG keys:chk" 'FALSE' \
     --field=$"Create an initial ramdisk environment:chk" 'FALSE' \
     --field=$"Generate a GRUB configuration file:chk" 'FALSE' \
-    --field=$" <span color='#990000'>[Optimize] [GnuPG] [Ramdisk] [Grub]</span>!/usr/share/icons/Adwaita/16x16/categories/preferences-system.png:fbtn" '@bash -c "doadvanced %7 %8 %9 %10"' &>/dev/null &
+    --field=$" <span color='#C41E1E'>[Optimize] [GnuPG] [Ramdisk] [Grub]</span>!/usr/share/icons/Adwaita/16x16/categories/preferences-system.png:fbtn" '@bash -c "doadvanced %7 %8 %9 %10"' &>/dev/null &
 
 yad --key="${fkey}" --notebook --geometry=480x640+200+100 \
-    --borders=9 --tab-borders=3 --active-tab=1 --focus-field=1 \
+    --borders=6 --tab-borders=3 --active-tab=1 --focus-field=1 \
     --window-icon="system-software-install" --title=$"${yalpamTitle} v${yalpamVersion}" \
     --image="system-software-install" --image-on-top \
     --text=$"<span font_size='medium' font_weight='bold'>View Lists of Installed Packages</span>\n\
@@ -333,7 +352,7 @@ These are <i><b>only</b> the explicitly installed</i> packages from all enabled 
     --tab=" <i>System</i> packages" \
     --tab=" <i>Local/AUR</i> packages" \
     --tab=" Daily/Useful tasks" \
-    --button=$"<span color='#0066ff'>_List/Update</span>!system-search!Scans databases for installed packages:bash -c 'doscan4pkgs'" \
+    --button=$"<span color='#206EB8'>_List/Update</span>!system-search!Scans databases for installed packages:bash -c 'doscan4pkgs'" \
     --button=$"_Save...!document-save!Saves packages lists to disk for later use:bash -c 'dosavepkglists'" \
     --button="_About...!help-about:bash -c 'doabout'" \
     --button="_Quit!application-exit":0 &>/dev/null
