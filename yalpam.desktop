@@ -1,8 +1,8 @@
 [Desktop Entry]
 Encoding=UTF-8
 Type=Application
-Name=Package Manager
-GenericName=Package Manager
+Name=Archers Package Manager
+GenericName=Archers Package Manager
 Comment=Yet another Arch Linux PAckage Manager
 Exec=yalpam
 Icon=system-software-install

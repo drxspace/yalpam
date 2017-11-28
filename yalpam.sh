@@ -12,7 +12,7 @@ set -e
 #
 set -x
 
-export yalpamVersion="0.6.998"
+export yalpamVersion="0.7.000"
 
 export yalpamTitle="Yet another Arch Linux PAckage Manager"
 export yalpamName="yalpam"
@@ -34,10 +34,10 @@ hash paplay 2>/dev/null && [[ -d /usr/share/sounds/freedesktop/stereo/ ]] && {
 msg() {
 	$(${errorSnd});
 	if ! hash notify-send 2>/dev/null; then
-		echo -e ":: \e[1m$1\e[0m $2" 1>&2;
+		echo -e ":: \e[1m${1}\e[0m $2" 1>&2;
 		[ "x$3" == "x" ] || exit $3;
 	else
-		notify-send "${yalpamTitle}" "<b>$1</b> $2" -i face-worried;
+		notify-send "${yalpamTitle}" "<b>${1}</b> $2" -i face-worried;
 		[ "x$3" == "x" ] || exit $(($3 + 5));
 	fi
 }
@@ -130,7 +130,7 @@ export -f doadvanced
 
 doreinstpkg() {
 	kill -s USR1 $YAD_PID # Close caller window
-	xterm ${xtermOptionsGreen} -e "[[ \"$1\" == \"pacman\" ]] && { $IAdmin $1 -Sy --force --noconfirm $2; } || { $1 -Sya --force --noconfirm $2; }"
+	xterm ${xtermOptionsGreen} -e "[[ \"${1}\" == \"pacman\" ]] && { $IAdmin $1 -Sy --force --noconfirm $2; } || { $1 -Sya --force --noconfirm $2; }"
 	doscan4pkgs
 	return
 }
@@ -175,7 +175,7 @@ doinstpkg() {
 
 	fxtermstatus=$(mktemp -u --tmpdir xtermstatus.XXXXXXXX)
 	[[ $ret -eq 0 ]] && [[ "${packagenames}" ]] && {
-		xterm ${xtermOptionsBlue} -e "[[ \"$1\" == \"pacman\" ]] && { $IAdmin $1 -Sy ${packagenames}; } || { $1 -Sya ${packagenames}; };" # echo $?" >${fxtermstatus}
+		xterm ${xtermOptionsBlue} -e "[[ \"${1}\" == \"pacman\" ]] && { $IAdmin $1 -Sy ${packagenames}; } || { $1 -Sya ${packagenames}; };" # echo $?" >${fxtermstatus}
 		[[ $(<$fxtermstatus) -eq 0 ]] && doscan4pkgs || $(${errorSnd})
 	}
 	rm -f ${fxtermstatus}
@@ -206,11 +206,12 @@ export -f doexecpkg
 doshowinfo() {
 	kill -s USR1 $YAD_PID # Close caller window
 	local pkgnfo=$()
-	yaourt -Qii ${1} | \
+	yaourt -Qii $1 | sed '/^[[:blank:]]*$/d' | \
 	yad 	--text-info --borders=6 --text-align="left" \
-		--geometry=480x500+240+140 --skip-taskbar --title="Information about the selected package" \
-		--image="dialog-information" --image-on-top \
-		--text=$"This dialog displays specific information, such as Version, Description, Dependencies etc, about the selected installed package:\n<b><i>${1}</i></b>" \
+		--geometry=480x480+240+140 --skip-taskbar --title="Information about the selected package" \
+		--margins=3 --fore="#333333" --back="#ffffff" --show-uri \
+		--image="dialog-information" --image-on-top --fontname="Monospace Regular 9" \
+		--text=$"This dialog displays specific information, such as <i>Version</i>, <i>Description</i>, <i>Dependencies</i> etc, about the selected installed package:\n<b><i>${1}</i></b>" \
 		--buttons-layout="center" \
 		--button=$"_Close!application-exit!Closes the current dialog":0 &>/dev/null & local pid=$!
 	sed -i "s/openedFormPIDs=(\(.*\))/openedFormPIDs=(\1 $(echo ${pid}))/" ${frunningPIDs}
@@ -265,7 +266,7 @@ doabout() {
 		--image="system-software-install" --image-on-top \
 		--text=$"<span font_size='medium' font_weight='bold'>${yalpamTitle} v${yalpamVersion}</span>\nby John A Ginis (a.k.a. <a href='https://github.com/drxspace'>drxspace</a>)\n<span font_size='small'>build on Summer of 2017</span>" \
 		--field="":lbl '' \
-		--field=$"<b><i>yalpam</i></b> is a helper tool for managing Arch Linux packages that I started to build in order to cope with my own personal <i>special</i> needs.\nIt uses the great tool <a href='https://github.com/v1cont/yad'>yad</a> v$(yad --version)  which is a personal project of <a href='https://plus.google.com/+VictorAnanjevsky'>Victor Ananjevsky</a>.\n\nI decided to share my <i>joy</i> with you because you may find it useful too.\nHave fun and bring joy into your lifes,\nJohn":lbl '' \
+		--field=$"<b><i>yalpam</i></b> is a helper tool for managing Arch Linux packages that I started to build in order to cope with my own personal <i>special</i> needs.\nIt uses the great tool <a href='https://github.com/v1cont/yad'>yad</a> v$(yad --version)  which is a personal project of <a href='https://plus.google.com/+VictorAnanjevsky'>Victor Ananjevsky</a>.\nFor now, this tool supports only three of the Arch-based distributions which are: <i>Arch Linux</i> itself, <i>Antergos Linux</i> and <i>Manjaro Linux</i>.\n\nI decided to share my <i>joy</i> with you because you may find it useful too so have fun and bring joy into your lifes,\nJohn":lbl '' \
 		--field="":lbl '' \
 		--buttons-layout="center" \
 		--button=$"_Close!application-exit!Closes the current dialog":0 &>/dev/null & local pid=$!
@@ -343,7 +344,7 @@ yad --plug="${fkey}" --tabnum=3 --form --focus-field=2 \
     --field=$"Generate a GRUB configuration file:chk" 'FALSE' \
     --field=$" <span color='#C41E1E'>[Optimize] [GnuPG] [Ramdisk] [Grub]</span>!/usr/share/icons/Adwaita/16x16/categories/preferences-system.png:fbtn" '@bash -c "doadvanced %7 %8 %9 %10"' &>/dev/null &
 
-yad --key="${fkey}" --notebook --geometry=480x640+200+100 \
+yad --key="${fkey}" --notebook --class="WC_YALPAM" --name="yalpam" --geometry=480x640+200+100 \
     --borders=6 --tab-borders=3 --active-tab=1 --focus-field=1 \
     --window-icon="system-software-install" --title=$"${yalpamTitle} v${yalpamVersion}" \
     --image="system-software-install" --image-on-top \
