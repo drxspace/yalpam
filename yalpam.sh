@@ -12,7 +12,7 @@ set -e
 #
 set -x
 
-export yalpamVersion="0.7.000"
+export yalpamVersion="0.7.130"
 
 export yalpamTitle="Yet another Arch Linux PAckage Manager"
 export yalpamName="yalpam"
@@ -63,7 +63,7 @@ elif ! hash yaourt 2>/dev/null; then
 	msg "yaourt" "command not found." 20
 elif [[ -z "$(yad --version | grep 'GTK+ 2')" ]]; then
 	msg "yad" "command uses an unsupported GTK+ platform version.\n<i>Expect GUI abnormalities.</i>"
-elif ! hash xterm  2>/dev/null; then
+elif ! hash xterm 2>/dev/null; then
 	msg "xterm" "command not found." 30
 fi
 
@@ -159,8 +159,10 @@ doinstpkg() {
 	local ret=
 	local packagenames=
 	kill -s USR1 $YAD_PID # Close caller window
-	yad	--form --width=460 --borders=6 --center --fixed --skip-taskbar \
-		--geometry=+540+140 --image="/usr/share/icons/Adwaita/48x48/emblems/emblem-package.png" --title="Enter package name(s)..." \
+	yad	--form --class="WC_YALPAM" --geometry=+230+140 --width=460 --fixed \
+		--skip-taskbar --borders=6 \
+		--title="Enter package name(s)..." \
+		--image="/usr/share/icons/Adwaita/48x48/emblems/emblem-package.png" \
 		--no-buttons --columns=2 --focus-field=2 \
 		--field=$"Input here one or more package names separated by <i>blank</i> characters:":lbl '' \
 		--field='' '' \
@@ -207,11 +209,13 @@ doshowinfo() {
 	kill -s USR1 $YAD_PID # Close caller window
 	local pkgnfo=$()
 	yaourt -Qii $1 | sed '/^[[:blank:]]*$/d' | \
-	yad 	--text-info --borders=6 --text-align="left" \
-		--geometry=480x480+240+140 --skip-taskbar --title="Information about the selected package" \
+	yad 	--text-info --class="WC_YALPAM" --borders=6 --text-align="left" \
+		--geometry=+230+140 --width=480 --height=484 --fixed --skip-taskbar \
+		--title="Information about the selected package" \
 		--margins=3 --fore="#333333" --back="#ffffff" --show-uri \
 		--image="dialog-information" --image-on-top --fontname="Monospace Regular 9" \
-		--text=$"This dialog displays specific information, such as <i>Version</i>, <i>Description</i>, <i>Dependencies</i> etc, about the selected installed package:\n<b><i>${1}</i></b>" \
+		--text=$"<span font_weight='bold'>View Package Information</span>\n\
+This dialog displays specific information, such as <i>Version</i>, <i>Description</i>, <i>Dependencies</i> etc, about the selected installed package: <b><i>${1}</i></b>" \
 		--buttons-layout="center" \
 		--button=$"_Close!application-exit!Closes the current dialog":0 &>/dev/null & local pid=$!
 	sed -i "s/openedFormPIDs=(\(.*\))/openedFormPIDs=(\1 $(echo ${pid}))/" ${frunningPIDs}
@@ -234,10 +238,11 @@ doaction() {
 	export manager=$1
 	export package=$3
 
-	yad	--form --width=360 --borders=6 --fixed \
-		--geometry=+240+140 --skip-taskbar --title="Choose action:" \
+	yad	--form --class="WC_YALPAM" --geometry=+230+140 --width=500 --fixed \
+		--borders=6 --skip-taskbar --title="Choose action:" \
 		--image="dialog-information" --image-on-top \
-		--text=$"Please, choose your desired action from the\nlist below to apply to the selected package\nby clicking one of its elements." \
+		--text=$"<span font_weight='bold'>Act with Package</span>\n\
+Choose your desired action from the list below to apply to the selected package by clicking one of its elements." \
 		--field="":lbl '' \
 		--field=$" <span color='#206EB8'>_Reinstall/Update selected package</span>!view-refresh":btn 'bash -c "doreinstpkg $manager $package"' \
 		--field=$" <span color='#206EB8'>_Uninstall/Remove selected package + dependencies</span>!edit-delete":btn 'bash -c "doremovepkg $manager $package"' \
@@ -261,12 +266,12 @@ export -f doaction
 # ---[ Buttons functionality ]-------------------------------------------------|
 
 doabout() {
-	yad	--form --borders=6 --text-align="left" --fixed \
-		--geometry=+240+140 --skip-taskbar --title="About ${yalpamTitle}" \
+	yad	--form --class="WC_YALPAM" --geometry=+230+140 --text-align="left" --fixed \
+		--borders=6 --skip-taskbar --title="About ${yalpamTitle}" \
 		--image="system-software-install" --image-on-top \
-		--text=$"<span font_size='medium' font_weight='bold'>${yalpamTitle} v${yalpamVersion}</span>\nby John A Ginis (a.k.a. <a href='https://github.com/drxspace'>drxspace</a>)\n<span font_size='small'>build on Summer of 2017</span>" \
+		--text=$"<span font_weight='bold'>${yalpamTitle} v${yalpamVersion}</span>\nby John A Ginis (a.k.a. <a href='https://github.com/drxspace'>drxspace</a>)\n<span font_size='small'>build on Summer of 2017</span>" \
 		--field="":lbl '' \
-		--field=$"<b><i>yalpam</i></b> is a helper tool for managing Arch Linux packages that I started to build in order to cope with my own personal <i>special</i> needs.\nIt uses the great tool <a href='https://github.com/v1cont/yad'>yad</a> v$(yad --version)  which is a personal project of <a href='https://plus.google.com/+VictorAnanjevsky'>Victor Ananjevsky</a>.\nFor now, this tool supports only three of the Arch-based distributions which are: <i>Arch Linux</i> itself, <i>Antergos Linux</i> and <i>Manjaro Linux</i>.\n\nI decided to share my <i>joy</i> with you because you may find it useful too so have fun and bring joy into your lifes,\nJohn":lbl '' \
+		--field=$"<b><i>yalpam</i></b> is a helper tool for managing Arch Linux packages that I started to build in order to cope with my own personal <i>special</i> needs.\nIt uses the great tool <a href='https://github.com/v1cont/yad'>yad</a> v$(yad --version) which is a personal project of <a href='https://plus.google.com/+VictorAnanjevsky'>Victor Ananjevsky</a>.\nFor now, this tool supports only three of the Arch-based distributions which are: <i>Arch Linux</i> itself, <i>Antergos Linux</i> and <i>Manjaro Linux</i>.\n\nI decided to share my <i>joy</i> with you because you may find it useful too so... have fun and bring joy into your lifes,\nJohn":lbl '' \
 		--field="":lbl '' \
 		--buttons-layout="center" \
 		--button=$"_Close!application-exit!Closes the current dialog":0 &>/dev/null & local pid=$!
@@ -278,16 +283,16 @@ doabout() {
 export -f doabout
 
 dosavepkglists() {
-	local dirname=$(yad --file --directory --filename="${XDG_DOWNLOAD_DIR:-$HOME/Downloads}/" \
-			    --geometry=600x400+210+140 --skip-taskbar \
+	local dirname=$(yad --file --class="WC_YALPAM" --directory --filename="${XDG_DOWNLOAD_DIR:-$HOME/Downloads}/" \
+			    --geometry=640x480+210+140 --skip-taskbar \
 			    --button="gtk-cancel":1 \
 			    --button="gtk-ok":0 \
 			    --title="Choose a directory to save the files...")
 	if [[ "${dirname}" ]]; then
 		pacman -Qqe |\
-			grep -vx "$(pacman -Qqg base base-devel)" |\
-			grep -vx "$(pacman -Qqm)" > "${dirname}"/$(date -u +"%g%m%d")-SYSTEMpkgs.txt
-		pacman -Qqm > "${dirname}"/$(date -u +"%g%m%d")-LOCALpkgs.txt
+			grep -vx "$(pacman -Qqg base)" |\
+			grep -vx "$(pacman -Qqm)" > "${dirname}"/SYSTEMpkgs-$(date -u +"%g%m%d").txt
+		pacman -Qqm > "${dirname}"/LOCALAURpkgs-$(date -u +"%g%m%d").txt
 	fi
 	return
 }
@@ -296,7 +301,7 @@ export -f dosavepkglists
 doscan4pkgs() {
 	echo -e '\f' >> "${fpipepkgssys}"
 	pacman -Qe |\
-		grep -vx "$(pacman -Qg base base-devel)" |\
+		grep -vx "$(pacman -Qg base)" |\
 		grep -vx "$(pacman -Qm)" | sort |\
 		awk '{printf "%d\n%s\n%s\n", ++i, $1, $2}' |\
 		tee -a "${fpipepkgssys}" |\
@@ -348,8 +353,8 @@ yad --key="${fkey}" --notebook --class="WC_YALPAM" --name="yalpam" --geometry=48
     --borders=6 --tab-borders=3 --active-tab=1 --focus-field=1 \
     --window-icon="system-software-install" --title=$"${yalpamTitle} v${yalpamVersion}" \
     --image="system-software-install" --image-on-top \
-    --text=$"<span font_size='medium' font_weight='bold'>View Lists of Installed Packages</span>\n\
-These are <i><b>only</b> the explicitly installed</i> packages from all enabled repositories except for <i>base</i> and <i>base-devel</i>. Also, you\'ll find packages that are locally installed such as <i>AUR</i> packages." \
+    --text=$"<span font_weight='bold'>Lists of Installed Packages</span>\n\
+These are <i><b>only</b> the explicitly installed</i> packages from all enabled repositories except for <i>base</i> one. Also, you\'ll find packages that are locally installed such as <i>AUR</i> packages." \
     --tab=" <i>System</i> packages" \
     --tab=" <i>Local/AUR</i> packages" \
     --tab=" Daily/Useful tasks" \
