@@ -12,7 +12,7 @@ set -e
 #
 set -x
 
-export yalpamVersion="0.7.130"
+export yalpamVersion="0.7.430"
 
 export yalpamTitle="Yet another Arch Linux PAckage Manager"
 export yalpamName="yalpam"
@@ -199,8 +199,10 @@ docrawl() {
 export -f docrawl
 
 doexecpkg() {
-	kill -s USR1 $YAD_PID # Close caller window
-	$1 || $(${errorSnd})
+	hash $1 &>/dev/null && {
+		kill -s USR1 $YAD_PID; # Close caller window
+		exec ${1};
+	} || $(${errorSnd})
 	return
 }
 export -f doexecpkg
@@ -226,8 +228,10 @@ This dialog displays specific information, such as <i>Version</i>, <i>Descriptio
 export -f doshowinfo
 
 domanpage() {
-	kill -s USR1 $YAD_PID # Close caller window
-	man $1 &>/dev/null || $(${infoSnd}) && xterm -geometry 94x60 -fa 'Monospace' -fs 9 -bg CadetBlue -e man $1
+	man $1 &>/dev/null && {
+		kill -s USR1 $YAD_PID # Close caller window
+		xterm -geometry 94x60 -fa 'Monospace' -fs 9 -bg CadetBlue -e man $1
+	} || $(${infoSnd})
 	return
 }
 export -f domanpage
