@@ -12,7 +12,7 @@ set -e
 #
 set -x
 
-export yalpamVersion="0.7.430"
+export yalpamVersion="0.7.650"
 
 export yalpamTitle="Yet another Arch Linux PAckage Manager"
 export yalpamName="yalpam"
@@ -99,7 +99,7 @@ doupdate() {
 	echo "1:TRUE"
 	echo "2:FALSE"
 	echo "3:TRUE"
-	echo "4:FALSE"
+	echo "4:TRUE"
 	echo '5:@bash -c "doupdate %1 %2 %3 %4"'
 	return
 }
@@ -275,7 +275,7 @@ doabout() {
 		--image="system-software-install" --image-on-top \
 		--text=$"<span font_weight='bold'>${yalpamTitle} v${yalpamVersion}</span>\nby John A Ginis (a.k.a. <a href='https://github.com/drxspace'>drxspace</a>)\n<span font_size='small'>build on Summer of 2017</span>" \
 		--field="":lbl '' \
-		--field=$"<b><i>yalpam</i></b> is a helper tool for managing Arch Linux packages that I started to build in order to cope with my own personal <i>special</i> needs.\nIt uses the great tool <a href='https://github.com/v1cont/yad'>yad</a> v$(yad --version) which is a personal project of <a href='https://plus.google.com/+VictorAnanjevsky'>Victor Ananjevsky</a>.\nFor now, this tool supports only three of the Arch-based distributions which are: <i>Arch Linux</i> itself, <i>Antergos Linux</i> and <i>Manjaro Linux</i>.\n\nI decided to share my <i>joy</i> with you because you may find it useful too so... have fun and bring joy into your lifes,\nJohn":lbl '' \
+		--field=$"<b><i>yalpam</i></b> is a helper tool for managing Arch Linux packages that I started to build in order to cope with my own personal <i>special</i> needs.\nIt uses the great tool <a href='https://github.com/v1cont/yad'>yad</a> v$(yad --version) which is a personal project of <a href='https://plus.google.com/+VictorAnanjevsky'>Victor Ananjevsky</a>.\n\nFor the time being this tool supports only three of the Arch-based distributions which are: <i>Arch Linux</i> itself, <i>Antergos Linux</i> and <i>Manjaro Linux</i>.\n\nI decided to share my <i>joy</i> with you because you may find it useful too so... have fun and bring joy into your life,\nJohn":lbl '' \
 		--field="":lbl '' \
 		--buttons-layout="center" \
 		--button=$"_Close!application-exit!Closes the current dialog":0 &>/dev/null & local pid=$!
@@ -291,7 +291,7 @@ dosavepkglists() {
 			    --geometry=640x480+210+140 --skip-taskbar \
 			    --button="gtk-cancel":1 \
 			    --button="gtk-ok":0 \
-			    --title="Choose a directory to save the files...")
+			    --title="Choose directory to save the two packages lists...")
 	if [[ "${dirname}" ]]; then
 		pacman -Qqe |\
 			grep -vx "$(pacman -Qqg base)" |\
@@ -342,10 +342,10 @@ doscan4pkgs
 
 yad --plug="${fkey}" --tabnum=3 --form --focus-field=2 \
     --field=$"Refresh pacman databases:chk" 'TRUE' \
-    --field=$"Retrieve and Filter a list of the latest Arch Linux mirrors:chk" 'FALSE' \
+    --field=$"Retrieve and Filter a list of the latest Arch Linux mirrors:chk" 'TRUE' \
     --field=$"Update packages:chk" 'TRUE' \
-    --field=$"Clean ALL files from cache, unused and sync repositories databases:chk" 'FALSE' \
-    --field=$" <span color='#206EB8'>Refresh [ [Retrieve] [Update] [Clean] ]</span>!/usr/share/icons/HighContrast/16x16/apps/system-software-update.png:fbtn" '@bash -c "doupdate %1 %2 %3 %4"' \
+    --field=$"Clean ALL files from cache, unused and sync repositories databases:chk" 'TRUE' \
+    --field=$" <span color='#206EB8'>Refresh [ [Retrieve] [Update] [Clean] ]</span>!/usr/share/icons/Adwaita/16x16/apps/system-software-update.png:fbtn" '@bash -c "doupdate %1 %2 %3 %4"' \
     --field="":lbl '' \
     --field=$"Optimize pacman databases:chk" 'FALSE' \
     --field=$"Refresh pacman GnuPG keys:chk" 'FALSE' \

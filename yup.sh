@@ -239,8 +239,10 @@ if $Optimize; then
 	# Grant root privileges
 	sudo -v || exit 5
 
-	msg "Updating the stored metadata files..." 10
-	sudo pkgfile --update
+	if hash pkgfile &>/dev/null; then
+		msg "Updating the stored metadata files..." 10
+		sudo pkgfile --update
+	fi
 
 	msg "Upgrading and Optimizing pacman databases..." 10
 

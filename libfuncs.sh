@@ -10,7 +10,7 @@
 #set -e
 #set -x
 
-ScriptVersion="0.9.2"
+ScriptVersion="0.9.3"
 ScriptName="$(basename $0)"
 
 msg() {

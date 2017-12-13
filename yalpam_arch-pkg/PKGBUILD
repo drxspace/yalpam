@@ -17,6 +17,7 @@ depends=(
 optdepends=(
 	'lostfiles: Find orphaned files not owned by any Arch packages'
 	'os-prober: Utility to detect other OSes on a set of drives'
+	'pkgfile: A pacman .files metadata explorer'
 	'reflector: A Python 3 module and script to retrieve and filter the latest Pacman mirror list'
 )
 source=("git+${url}.git")
