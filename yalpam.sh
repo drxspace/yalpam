@@ -12,7 +12,7 @@ set -e
 #
 set -x
 
-export yalpamVersion="0.7.650"
+export yalpamVersion="0.7.760"
 
 export yalpamTitle="Yet another Arch Linux PAckage Manager"
 export yalpamName="yalpam"
@@ -116,11 +116,13 @@ doadvanced() {
 	[[ "$4" = "TRUE" ]] && argssys=$argssys" -g"
 	[[ "$argsyup" ]] && theCommand=${theCommand}"yup $argsyup; "
 	[[ "$argssys" ]] && theCommand=${theCommand}"update-sys $argssys;"
-	[[ "$theCommand" ]] && xterm ${xtermOptionsRed} -e "${theCommand}"
-	echo "7:FALSE"
-	echo "8:FALSE"
-	echo "9:FALSE"
-	echo "10:FALSE"
+	[[ "$theCommand" ]] && {
+		xterm ${xtermOptionsRed} -e "${theCommand}"
+		echo "7:FALSE"
+		echo "8:FALSE"
+		echo "9:FALSE"
+		echo "10:FALSE"
+	} || $(${infoSnd})
 	echo '11:@bash -c "doadvanced %7 %8 %9 %10"'
 	return
 }
@@ -130,7 +132,7 @@ export -f doadvanced
 
 doreinstpkg() {
 	kill -s USR1 $YAD_PID # Close caller window
-	xterm ${xtermOptionsGreen} -e "[[ \"${1}\" == \"pacman\" ]] && { $IAdmin $1 -Sy --force --noconfirm $2; } || { $1 -Sya --force --noconfirm $2; }"
+	xterm ${xtermOptionsGreen} -e "[[ \"${1}\" == \"pacman\" ]] && { $IAdmin $1 -Sy --force --noconfirm $2; } || { $1 -Sya --build --force --noconfirm $2; }"
 	doscan4pkgs
 	return
 }
