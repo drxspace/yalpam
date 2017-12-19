@@ -26,11 +26,11 @@ source "$(dirname "$0")"/libfuncs &>/dev/null || {
 }
 
 [[ "$1" = "-g" ]] || [[ "$1" = "" ]] || [[ "$1" = "-a" ]] && {
+	msg "Generating a GRUB configuration file" 10;
 	if hash os-prober &>/dev/null; then
-		msg "Probing disks on the system for other operating systems" 10;
+		msg "Probing disks on the system for other operating systems" 12;
 		sudo os-prober;
 	fi
-	msg "Generating a GRUB configuration file" 10;
 	exec sudo grub-mkconfig -o /boot/grub/grub.cfg;
 }
 

@@ -12,7 +12,7 @@ set -e
 #
 set -x
 
-export yalpamVersion="0.7.760"
+export yalpamVersion="0.7.850"
 
 export yalpamTitle="Yet another Arch Linux PAckage Manager"
 export yalpamName="yalpam"
@@ -110,8 +110,8 @@ doadvanced() {
 	local argsyup=
 	local argssys=
 	echo "11:@disable@"
-	[[ "$1" = "TRUE" ]] && argsyup=$argsyup" -o"
-	[[ "$2" = "TRUE" ]] && argsyup=$argsyup" -r"
+	[[ "$1" = "TRUE" ]] && argsyup=$argsyup" -r"
+	[[ "$2" = "TRUE" ]] && argsyup=$argsyup" -o"
 	[[ "$3" = "TRUE" ]] && argssys=$argssys" -m"
 	[[ "$4" = "TRUE" ]] && argssys=$argssys" -g"
 	[[ "$argsyup" ]] && theCommand=${theCommand}"yup $argsyup; "
@@ -349,11 +349,11 @@ yad --plug="${fkey}" --tabnum=3 --form --focus-field=2 \
     --field=$"Clean ALL files from cache, unused and sync repositories databases:chk" 'TRUE' \
     --field=$" <span color='#206EB8'>Refresh [ [Retrieve] [Update] [Clean] ]</span>!/usr/share/icons/Adwaita/16x16/apps/system-software-update.png:fbtn" '@bash -c "doupdate %1 %2 %3 %4"' \
     --field="":lbl '' \
-    --field=$"Optimize pacman databases:chk" 'FALSE' \
     --field=$"Refresh pacman GnuPG keys:chk" 'FALSE' \
+    --field=$"Optimize pacman databases:chk" 'FALSE' \
     --field=$"Create an initial ramdisk environment:chk" 'FALSE' \
     --field=$"Generate a GRUB configuration file:chk" 'FALSE' \
-    --field=$" <span color='#C41E1E'>[Optimize] [GnuPG] [Ramdisk] [Grub]</span>!/usr/share/icons/Adwaita/16x16/categories/preferences-system.png:fbtn" '@bash -c "doadvanced %7 %8 %9 %10"' &>/dev/null &
+    --field=$" <span color='#C41E1E'>[GnuPG] [Optimize] [Ramdisk] [Grub]</span>!/usr/share/icons/Adwaita/16x16/categories/preferences-system.png:fbtn" '@bash -c "doadvanced %7 %8 %9 %10"' &>/dev/null &
 
 yad --key="${fkey}" --notebook --class="WC_YALPAM" --name="yalpam" --geometry=480x640+200+100 \
     --borders=6 --tab-borders=3 --active-tab=1 --focus-field=1 \
