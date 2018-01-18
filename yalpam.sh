@@ -12,7 +12,7 @@ set -e
 #
 set -x
 
-export yalpamVersion="0.7.850"
+export yalpamVersion="0.7.900"
 
 export yalpamTitle="Yet another Arch Linux PAckage Manager"
 export yalpamName="yalpam"
@@ -252,7 +252,7 @@ Choose your desired action from the list below to apply to the selected package 
 		--field="":lbl '' \
 		--field=$" <span color='#206EB8'>_Reinstall/Update selected package</span>!view-refresh":btn 'bash -c "doreinstpkg $manager $package"' \
 		--field=$" <span color='#206EB8'>_Uninstall/Remove selected package + dependencies</span>!edit-delete":btn 'bash -c "doremovepkg $manager $package"' \
-		--field=$" <span color='#206EB8'>_Install a package of the selected category</span>!go-down":btn 'bash -c "doinstpkg $manager"' \
+		--field=$" <span color='#206EB8'>_Install package(s) of the selected category</span>!go-down":btn 'bash -c "doinstpkg $manager"' \
 		--field="":lbl '' \
 		--field=$" <span color='#206EB8'>Try to <i>_execute</i> the selected package</span>!system-run":btn 'bash -c "doexecpkg $package"' \
 		--field="":lbl '' \
@@ -275,7 +275,7 @@ doabout() {
 	yad	--form --class="WC_YALPAM" --geometry=+230+140 --text-align="left" --fixed \
 		--borders=6 --skip-taskbar --title="About ${yalpamTitle}" \
 		--image="system-software-install" --image-on-top \
-		--text=$"<span font_weight='bold'>${yalpamTitle} v${yalpamVersion}</span>\nby John A Ginis (a.k.a. <a href='https://github.com/drxspace'>drxspace</a>)\n<span font_size='small'>build on Summer of 2017</span>" \
+		--text=$"<span font_weight='bold'>${yalpamTitle} v${yalpamVersion}</span>\nby John A Ginis (a.k.a. <a href='https://github.com/drxspace'>drxspace</a>)\n<span font_size='small'>build 2017-18</span>" \
 		--field="":lbl '' \
 		--field=$"<b><i>yalpam</i></b> is a helper tool for managing Arch Linux packages that I started to build in order to cope with my own personal <i>special</i> needs.\nIt uses the great tool <a href='https://github.com/v1cont/yad'>yad</a> v$(yad --version) which is a personal project of <a href='https://plus.google.com/+VictorAnanjevsky'>Victor Ananjevsky</a>.\n\nFor the time being this tool supports only three of the Arch-based distributions which are: <i>Arch Linux</i> itself, <i>Antergos Linux</i> and <i>Manjaro Linux</i>.\n\nI decided to share my <i>joy</i> with you because you may find it useful too so... have fun and bring joy into your life,\nJohn":lbl '' \
 		--field="":lbl '' \
